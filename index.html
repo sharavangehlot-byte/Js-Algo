@@ -11,9 +11,10 @@ header{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;gap:14
 .brand{font-size:20px;font-weight:800;letter-spacing:.2px}.brand span{color:var(--green)}.sub{color:var(--muted);font-size:12px}
 .badge{display:inline-block;border:1px solid #8a6822;color:#ffdc7b;background:#332a16;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:700}
 main{max-width:1400px;margin:auto;padding:18px}.notice{padding:12px 14px;border:1px solid #735d27;background:#2b2618;color:#ffe3a0;border-radius:10px;margin-bottom:16px}
-.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}.layout{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px;min-width:0}.panel h2{font-size:15px;margin:0 0 12px}.metric{font-size:24px;font-weight:800;margin:6px 0}.muted{color:var(--muted)}.positive{color:var(--green)}.negative{color:var(--red)}.warning{color:var(--yellow)}.small{font-size:12px}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.pill{border-radius:8px;background:var(--panel2);padding:5px 8px;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}.layout{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px;min-width:0}.panel h2{font-size:15px;margin:0 0 12px}.metric{font-size:24px;font-weight:800;margin:6px 0}.muted{color:var(--muted)}.positive{color:var(--green)}.negative{color:var(--red)}.warning{color:var(--yellow)}.small{font-size:12px}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.pill{border-radius:8px;background:var(--panel2);padding:5px 8px;font-size:12px}
 button,select,input{background:#0c1524;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit}button{cursor:pointer}button.primary{background:#176d56;border-color:#25886d;font-weight:700}button:hover{filter:brightness(1.15)}.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.controls label{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
-table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px 7px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{color:var(--muted);font-weight:600}th:first-child,td:first-child{text-align:left}.call{color:var(--green)}.put{color:#ff8998}.tablewrap{overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{color:var(--muted);font-weight:600}
+.call{color:var(--green)}.put{color:#ff8998}.tablewrap{overflow-x:auto}
 .signal{padding:14px;border-radius:12px;background:#102c29;border:1px solid #1d6654;margin-bottom:12px}.signal .big{font-size:22px;font-weight:850;color:var(--yellow)}.rule{padding:10px 0;border-bottom:1px solid var(--line)}.rule:last-child{border:0}.bar{height:8px;border-radius:99px;background:#26364d;overflow:hidden;margin-top:7px}.bar span{display:block;height:100%;width:58%;background:var(--green)}.list{padding-left:18px;margin:8px 0}.list li{margin:7px 0}.footer{padding:18px;text-align:center;color:var(--muted);font-size:11px}
 @media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:1fr}header{position:static}}
 @media(max-width:480px){main{padding:10px}.grid{gap:8px}.panel{padding:12px}.metric{font-size:20px}.brand{font-size:17px}}
@@ -42,10 +43,35 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px 7px;b
  <div class="layout">
   <div>
    <section class="panel" style="margin-bottom:14px">
-    <div class="row"><h2>Option Chain Snapshot</h2><span class="pill">Illustrative values</span></div>
-    <div class="tablewrap"><table><thead><tr><th>CE OI</th><th>CE ΔOI</th><th>Strike</th><th>PE ΔOI</th><th>PE OI</th></tr></thead><tbody id="chain">
-    </tbody></table></div>
-    <p class="small muted">Live build में Dhan API या चुने गए market-data provider से उपलब्ध डेटा जोड़ा जाएगा। OI अकेले दिशा की पुष्टि नहीं करता।</p>
+    <div class="row"><h2>Option Chain Module (Demo)</h2><span class="pill" id="pcr-badge">PCR: 1.04</span></div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th colspan="4" style="text-align:center;color:var(--green);border-bottom:2px solid var(--green)">CALLS (CE)</th>
+            <th style="text-align:center;font-weight:bold">STRIKE</th>
+            <th colspan="4" style="text-align:center;color:var(--red);border-bottom:2px solid var(--red)">PUTS (PE)</th>
+          </tr>
+          <tr>
+            <th>OI</th>
+            <th>ΔOI</th>
+            <th>Vol</th>
+            <th>LTP</th>
+            <th style="text-align:center">Price</th>
+            <th>LTP</th>
+            <th>Vol</th>
+            <th>ΔOI</th>
+            <th>OI</th>
+          </tr>
+        </thead>
+        <tbody id="full-chain-body"></tbody>
+      </table>
+    </div>
+    <div class="row" style="margin-top:12px;font-size:11px;color:var(--muted)">
+      <div>Total CE OI: <b id="total-ce-oi" class="call">0</b></div>
+      <div>Total PE OI: <b id="total-pe-oi" class="put">0</b></div>
+      <div>ATM / Max Pain: <b id="max-pain" style="color:var(--yellow)">—</b></div>
+    </div>
    </section>
    <section class="panel">
     <div class="row"><h2>Signal Engine</h2><span class="pill">Rules-based demo</span></div>
@@ -67,7 +93,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px 7px;b
     <div class="rule"><div class="row"><span class="muted">Risk per lot</span><b id="risklot">₹1,625</b></div></div>
     <div class="rule"><div class="row"><span class="muted">Qty within risk limit</span><b id="qtylimit">40</b></div></div>
     <div class="rule"><div class="row"><span class="muted">Potential reward (one lot)</span><b id="reward">₹3,250</b></div></div>
-    <p class="small muted">कैलकुलेशन: SL points × quantity; brokerage, taxes, slippage और gap risk शामिल नहीं। Quantity को अपने मौजूदा contract lot size से सत्यापित करें।</p>
+    <p class="small muted">कैलकुलेशन: SL points × quantity; brokerage, taxes, slippage और gap risk शामिल नहीं।</p>
     <button class="primary" id="calc">Calculate risk</button>
    </section>
    <section class="panel" style="margin-bottom:14px">
@@ -95,59 +121,89 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px 7px;b
 <script>
 const fmt = n => Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 
-const instrumentConfigs = {
+const configs = {
   "NIFTY 50": { base: 22450, step: 50, lot: 65, label: "NIFTY Spot (Demo)" },
   "BANK NIFTY": { base: 48250, step: 100, lot: 15, label: "BANK NIFTY Spot (Demo)" },
   "SENSEX": { base: 73800, step: 100, lot: 10, label: "SENSEX Spot (Demo)" }
 };
 
-function getActiveInst() {
-  const sel = document.getElementById('instrument').value;
-  return instrumentConfigs[sel] || instrumentConfigs["NIFTY 50"];
-}
-
-function renderChain(spot, step) {
+function renderFullOptionChain(spot, step) {
   const atm = Math.round(spot / step) * step;
-  const strikes = [atm - 2 * step, atm - step, atm, atm + step, atm + 2 * step];
-  const tbody = document.getElementById('chain');
+  const tbody = document.getElementById('full-chain-body');
   tbody.innerHTML = '';
+
+  let totalCe = 0;
+  let totalPe = 0;
+  const strikes = [];
+  for (let i = -3; i <= 3; i++) {
+    strikes.push(atm + (i * step));
+  }
+
   strikes.forEach(s => {
-    const ceOi = fmt(Math.floor(70000 + Math.random() * 60000));
-    const ceChg = '+' + fmt(Math.floor(1000 + Math.random() * 8000));
-    const peOi = fmt(Math.floor(65000 + Math.random() * 60000));
-    const peChg = '+' + fmt(Math.floor(1000 + Math.random() * 8000));
+    const ceOi = Math.floor(45000 + Math.random() * 75000);
+    const ceChg = Math.floor((Math.random() * 12000) - 3000);
+    const ceVol = Math.floor(18000 + Math.random() * 45000);
+
+    const peOi = Math.floor(40000 + Math.random() * 80000);
+    const peChg = Math.floor((Math.random() * 12000) - 3000);
+    const peVol = Math.floor(18000 + Math.random() * 45000);
+
+    const dist = (s - spot);
+    const ceLtp = Math.max(5, (160 - (dist * 0.7) + (Math.random() * 10))).toFixed(1);
+    const peLtp = Math.max(5, (160 + (dist * 0.7) + (Math.random() * 10))).toFixed(1);
+
+    totalCe += ceOi;
+    totalPe += peOi;
+
+    const isAtm = s === atm;
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="call">${ceOi}</td><td class="call">${ceChg}</td><td style="font-weight:700">${fmt(s)}</td><td class="put">${peChg}</td><td class="put">${peOi}</td>`;
+    if (isAtm) tr.style.background = '#18253a';
+
+    tr.innerHTML = `
+      <td class="call">${fmt(ceOi)}</td>
+      <td class="call">${ceChg >= 0 ? '+' : ''}${fmt(ceChg)}</td>
+      <td>${fmt(ceVol)}</td>
+      <td style="color:#fff">${ceLtp}</td>
+      <td style="text-align:center;font-weight:800;color:var(--yellow);${isAtm ? 'border-left:1px solid var(--line);border-right:1px solid var(--line);' : ''}">${fmt(s)}</td>
+      <td style="color:#fff">${peLtp}</td>
+      <td>${fmt(peVol)}</td>
+      <td class="put">${peChg >= 0 ? '+' : ''}${fmt(peChg)}</td>
+      <td class="put">${fmt(peOi)}</td>
+    `;
     tbody.appendChild(tr);
   });
+
+  const pcr = (totalPe / totalCe).toFixed(2);
+  document.getElementById('total-ce-oi').textContent = fmt(totalCe);
+  document.getElementById('total-pe-oi').textContent = fmt(totalPe);
+  document.getElementById('pcr-badge').textContent = 'PCR: ' + pcr;
+  document.getElementById('pcr').textContent = pcr;
+  document.getElementById('max-pain').textContent = fmt(atm);
 }
 
 function updateMarketData() {
-  const cfg = getActiveInst();
+  const sel = document.getElementById('instrument').value;
+  const cfg = configs[sel] || configs["NIFTY 50"];
+  
   document.getElementById('spotLabel').textContent = cfg.label;
-
-  const offset = (Math.random() * (cfg.step * 1.5) - (cfg.step * 0.75));
-  const currentSpot = cfg.base + offset;
+  const currentSpot = cfg.base + ((Math.random() * cfg.step * 1.5) - (cfg.step * 0.75));
   document.getElementById('spot').textContent = fmt(currentSpot);
 
   const vix = (13.5 + Math.random() * 3).toFixed(1);
-  const pcr = (0.8 + Math.random() * 0.5).toFixed(2);
   document.getElementById('vix').textContent = vix;
-  document.getElementById('pcr').textContent = pcr;
 
   const biases = [
     { text: "BULLISH", class: "positive" },
     { text: "BEARISH", class: "negative" },
     { text: "NEUTRAL", class: "warning" }
   ];
-  const biasChoice = biases[Math.floor(Math.random() * biases.length)];
-  const biasEl = document.getElementById('bias');
-  biasEl.textContent = biasChoice.text;
-  biasEl.className = 'metric ' + biasChoice.class;
+  const b = biases[Math.floor(Math.random() * biases.length)];
+  const bEl = document.getElementById('bias');
+  bEl.textContent = b.text;
+  bEl.className = 'metric ' + b.class;
 
   document.getElementById('qty').value = cfg.lot;
-
-  renderChain(currentSpot, cfg.step);
+  renderFullOptionChain(currentSpot, cfg.step);
   document.getElementById('stamp').textContent = 'Refreshed: ' + new Date().toLocaleTimeString('en-IN');
   calc();
 }
@@ -166,7 +222,6 @@ document.getElementById('calc').addEventListener('click', calc);
 ['risk','sl','target','qty'].forEach(id => document.getElementById(id).addEventListener('input', calc));
 
 document.getElementById('instrument').addEventListener('change', updateMarketData);
-
 document.getElementById('refresh').addEventListener('click', () => {
  updateMarketData();
  document.getElementById('reason').textContent = 'Demo आंकड़े रिफ्रेश किए गए हैं; रैंडम सिमुलेशन सक्रिय है।';
@@ -177,16 +232,13 @@ document.getElementById('analyze').addEventListener('click', () => {
  const inst = document.getElementById('instrument').value;
  const pcr = parseFloat(document.getElementById('pcr').textContent) || 1.0;
  
- let signal = "NO TRADE";
- let side = "NO TRADE";
- let color = "var(--yellow)";
- let reason = "सिग्नल कन्फर्मेशन नियमों के अनुरूप नहीं है।";
+ let signal = "NO TRADE", side = "NO TRADE", color = "var(--yellow)", reason = "सिग्नल नियमों के अनुरूप नहीं है।";
 
  if (pcr >= 1.15) {
    signal = "BUY CE (DEMO)";
    side = "CALL (CE)";
    color = "var(--green)";
-   reason = `${inst} में ${strat} के अनुसार बुलिश मोमेंटम और सकारात्मक PCR संकेत मिल रहा है।`;
+   reason = `${inst} में ${strat} के अनुसार बुलिश मोमेंटम और सकारात्मक PCR संकेत है।`;
    document.getElementById('trendCheck').innerHTML = '<span class="positive">Bullish</span>';
    document.getElementById('oiCheck').innerHTML = '<span class="positive">PE Support Strong</span>';
    document.getElementById('ivCheck').innerHTML = '<span class="positive">Favorable</span>';
@@ -196,7 +248,7 @@ document.getElementById('analyze').addEventListener('click', () => {
    signal = "BUY PE (DEMO)";
    side = "PUT (PE)";
    color = "var(--red)";
-   reason = `${inst} में ${strat} के अनुसार बेयरिश दबाव और कमजोर PCR संकेत मिल रहा है।`;
+   reason = `${inst} में ${strat} के अनुसार बेयरिश दबाव और कमजोर PCR संकेत है।`;
    document.getElementById('trendCheck').innerHTML = '<span class="negative">Bearish</span>';
    document.getElementById('oiCheck').innerHTML = '<span class="negative">CE Resistance High</span>';
    document.getElementById('ivCheck').innerHTML = '<span class="negative">Elevated</span>';
@@ -206,7 +258,7 @@ document.getElementById('analyze').addEventListener('click', () => {
    signal = "WAIT / NO TRADE";
    side = "NEUTRAL";
    color = "var(--yellow)";
-   reason = `${inst} में बाजार साइडवेज/रेंज-बाउंड है। जब तक क्लियर ब्रेकआउट न मिले, ट्रेड से बचें।`;
+   reason = `${inst} में बाजार साइडवेज/रेंज-बाउंड है। स्पष्ट ब्रेकआउट की प्रतीक्षा करें।`;
    document.getElementById('trendCheck').innerHTML = '<span class="warning">Sideways</span>';
    document.getElementById('oiCheck').innerHTML = '<span class="warning">Mixed OI</span>';
    document.getElementById('ivCheck').innerHTML = '<span class="warning">Normal</span>';
