@@ -34,7 +34,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px 7px;b
   <button class="primary" id="analyze">Analyze demo</button>
  </div>
  <section class="grid">
-  <div class="panel"><div class="muted">NIFTY Spot (Demo)</div><div class="metric" id="spot">22,450.00</div><div class="small warning">Not live-verified</div></div>
+  <div class="panel"><div class="muted" id="spotLabel">NIFTY Spot (Demo)</div><div class="metric" id="spot">22,450.00</div><div class="small warning">Not live-verified</div></div>
   <div class="panel"><div class="muted">Market Bias (Demo)</div><div class="metric warning" id="bias">NEUTRAL</div><div class="small muted">Price action + momentum</div></div>
   <div class="panel"><div class="muted">India VIX (Demo)</div><div class="metric" id="vix">14.8</div><div class="small muted">Volatility context only</div></div>
   <div class="panel"><div class="muted">PCR (Demo)</div><div class="metric" id="pcr">1.04</div><div class="small muted">OI-based ratio example</div></div>
@@ -44,17 +44,13 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px 7px;b
    <section class="panel" style="margin-bottom:14px">
     <div class="row"><h2>Option Chain Snapshot</h2><span class="pill">Illustrative values</span></div>
     <div class="tablewrap"><table><thead><tr><th>CE OI</th><th>CE ΔOI</th><th>Strike</th><th>PE ΔOI</th><th>PE OI</th></tr></thead><tbody id="chain">
-    <tr><td class="call">82,400</td><td class="call">+3,200</td><td>22,400</td><td class="put">+5,100</td><td class="put">91,700</td></tr>
-    <tr><td class="call">95,200</td><td class="call">+4,800</td><td>22,450</td><td class="put">+3,900</td><td class="put">88,300</td></tr>
-    <tr><td class="call">1,10,500</td><td class="call">+6,200</td><td>22,500</td><td class="put">+2,700</td><td class="put">76,900</td></tr>
-    <tr><td class="call">1,24,100</td><td class="call">+7,000</td><td>22,550</td><td class="put">+1,900</td><td class="put">69,200</td></tr>
     </tbody></table></div>
     <p class="small muted">Live build में Dhan API या चुने गए market-data provider से उपलब्ध डेटा जोड़ा जाएगा। OI अकेले दिशा की पुष्टि नहीं करता।</p>
    </section>
    <section class="panel">
     <div class="row"><h2>Signal Engine</h2><span class="pill">Rules-based demo</span></div>
     <div class="signal"><div class="muted small">DEMO DECISION</div><div class="big" id="signal">NO TRADE</div><div id="reason">लाइव डेटा उपलब्ध नहीं; वास्तविक ट्रेड के लिए सिग्नल मान्य नहीं है।</div></div>
-    <div class="rule"><div class="row"><span>Trend confirmation</span><b id="trendCheck" class="warning">Pending</b></div><div class="bar"><span id="trendBar"></span></div></div>
+    <div class="rule"><div class="row"><span>Trend confirmation</span><b id="trendCheck" class="warning">Pending</b></div><div class="bar"><span id="trendBar" style="width:50%"></span></div></div>
     <div class="rule"><div class="row"><span>Option-chain confirmation</span><b id="oiCheck" class="warning">Pending</b></div><div class="bar"><span id="oiBar" style="width:42%;background:var(--yellow)"></span></div></div>
     <div class="rule"><div class="row"><span>Volatility / IV check</span><b id="ivCheck" class="warning">Pending</b></div><div class="bar"><span id="ivBar" style="width:35%;background:var(--yellow)"></span></div></div>
     <p class="small muted">इन bars को वास्तविक probability न समझें। लाइव संस्करण में नियमों और डेटा की गुणवत्ता के आधार पर status दिखेगा, guaranteed win-rate नहीं।</p>
@@ -79,7 +75,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px 7px;b
     <div class="rule"><div class="row"><span>FII / DII data</span><b class="warning">Not connected</b></div></div>
     <div class="rule"><div class="row"><span>Global cues / News</span><b class="warning">Not connected</b></div></div>
     <div class="rule"><div class="row"><span>Greeks / ATM IV</span><b class="warning">Demo only</b></div></div>
-    <div class="rule"><div class="row"><span>Data timestamp</span><b id="stamp">No live feed</b></div></div>
+    <div class="rule"><div class="row"><span>Data timestamp</span><b id="stamp">Demo refreshed</b></div></div>
    </section>
    <section class="panel">
     <h2>Safety Rules</h2>
@@ -95,32 +91,137 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px 7px;b
  </div>
 </main>
 <div class="footer">JS Algo Trading · Front-end prototype · Demo data only · Not investment advice</div>
+
 <script>
-const fmt=n=>Number(n).toLocaleString('en-IN',{maximumFractionDigits:2});
-function calc(){
- const risk=Math.max(0,Number(document.getElementById('risk').value)||0);
- const sl=Math.max(0,Number(document.getElementById('sl').value)||0);
- const target=Math.max(0,Number(document.getElementById('target').value)||0);
- const qty=Math.max(1,Number(document.getElementById('qty').value)||1);
- document.getElementById('risklot').textContent='₹'+fmt(sl*qty);
- document.getElementById('qtylimit').textContent=sl>0?fmt(Math.floor(risk/sl)):'—';
- document.getElementById('reward').textContent='₹'+fmt(target*qty);
+const fmt = n => Number(n).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+
+const instrumentConfigs = {
+  "NIFTY 50": { base: 22450, step: 50, lot: 65, label: "NIFTY Spot (Demo)" },
+  "BANK NIFTY": { base: 48250, step: 100, lot: 15, label: "BANK NIFTY Spot (Demo)" },
+  "SENSEX": { base: 73800, step: 100, lot: 10, label: "SENSEX Spot (Demo)" }
+};
+
+function getActiveInst() {
+  const sel = document.getElementById('instrument').value;
+  return instrumentConfigs[sel] || instrumentConfigs["NIFTY 50"];
 }
-document.getElementById('calc').addEventListener('click',calc);
-['risk','sl','target','qty'].forEach(id=>document.getElementById(id).addEventListener('change',calc));
-document.getElementById('analyze').addEventListener('click',()=>{
- document.getElementById('signal').textContent='NO TRADE';
- document.getElementById('side').textContent='NO TRADE';
- document.getElementById('reason').textContent='यह demo mode है। Live price, option-chain और timestamp उपलब्ध हुए बिना वास्तविक CE/PE signal जारी नहीं किया जाएगा।';
- document.getElementById('trendCheck').textContent='Demo only';
- document.getElementById('oiCheck').textContent='No live feed';
- document.getElementById('ivCheck').textContent='No live feed';
+
+function renderChain(spot, step) {
+  const atm = Math.round(spot / step) * step;
+  const strikes = [atm - 2 * step, atm - step, atm, atm + step, atm + 2 * step];
+  const tbody = document.getElementById('chain');
+  tbody.innerHTML = '';
+  strikes.forEach(s => {
+    const ceOi = fmt(Math.floor(70000 + Math.random() * 60000));
+    const ceChg = '+' + fmt(Math.floor(1000 + Math.random() * 8000));
+    const peOi = fmt(Math.floor(65000 + Math.random() * 60000));
+    const peChg = '+' + fmt(Math.floor(1000 + Math.random() * 8000));
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="call">${ceOi}</td><td class="call">${ceChg}</td><td style="font-weight:700">${fmt(s)}</td><td class="put">${peChg}</td><td class="put">${peOi}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateMarketData() {
+  const cfg = getActiveInst();
+  document.getElementById('spotLabel').textContent = cfg.label;
+
+  const offset = (Math.random() * (cfg.step * 1.5) - (cfg.step * 0.75));
+  const currentSpot = cfg.base + offset;
+  document.getElementById('spot').textContent = fmt(currentSpot);
+
+  const vix = (13.5 + Math.random() * 3).toFixed(1);
+  const pcr = (0.8 + Math.random() * 0.5).toFixed(2);
+  document.getElementById('vix').textContent = vix;
+  document.getElementById('pcr').textContent = pcr;
+
+  const biases = [
+    { text: "BULLISH", class: "positive" },
+    { text: "BEARISH", class: "negative" },
+    { text: "NEUTRAL", class: "warning" }
+  ];
+  const biasChoice = biases[Math.floor(Math.random() * biases.length)];
+  const biasEl = document.getElementById('bias');
+  biasEl.textContent = biasChoice.text;
+  biasEl.className = 'metric ' + biasChoice.class;
+
+  document.getElementById('qty').value = cfg.lot;
+
+  renderChain(currentSpot, cfg.step);
+  document.getElementById('stamp').textContent = 'Refreshed: ' + new Date().toLocaleTimeString('en-IN');
+  calc();
+}
+
+function calc(){
+ const risk = Math.max(0, Number(document.getElementById('risk').value) || 0);
+ const sl = Math.max(0, Number(document.getElementById('sl').value) || 0);
+ const target = Math.max(0, Number(document.getElementById('target').value) || 0);
+ const qty = Math.max(1, Number(document.getElementById('qty').value) || 1);
+ document.getElementById('risklot').textContent = '₹' + fmt(sl * qty);
+ document.getElementById('qtylimit').textContent = sl > 0 ? fmt(Math.floor(risk / sl)) : '—';
+ document.getElementById('reward').textContent = '₹' + fmt(target * qty);
+}
+
+document.getElementById('calc').addEventListener('click', calc);
+['risk','sl','target','qty'].forEach(id => document.getElementById(id).addEventListener('input', calc));
+
+document.getElementById('instrument').addEventListener('change', updateMarketData);
+
+document.getElementById('refresh').addEventListener('click', () => {
+ updateMarketData();
+ document.getElementById('reason').textContent = 'Demo आंकड़े रिफ्रेश किए गए हैं; रैंडम सिमुलेशन सक्रिय है।';
 });
-document.getElementById('refresh').addEventListener('click',()=>{
- document.getElementById('stamp').textContent='Demo refreshed: '+new Date().toLocaleTimeString('en-IN');
- document.getElementById('reason').textContent='Demo refresh हुआ है; बाजार डेटा लाइव नहीं है।';
+
+document.getElementById('analyze').addEventListener('click', () => {
+ const strat = document.getElementById('strategy').value;
+ const inst = document.getElementById('instrument').value;
+ const pcr = parseFloat(document.getElementById('pcr').textContent) || 1.0;
+ 
+ let signal = "NO TRADE";
+ let side = "NO TRADE";
+ let color = "var(--yellow)";
+ let reason = "सिग्नल कन्फर्मेशन नियमों के अनुरूप नहीं है।";
+
+ if (pcr >= 1.15) {
+   signal = "BUY CE (DEMO)";
+   side = "CALL (CE)";
+   color = "var(--green)";
+   reason = `${inst} में ${strat} के अनुसार बुलिश मोमेंटम और सकारात्मक PCR संकेत मिल रहा है।`;
+   document.getElementById('trendCheck').innerHTML = '<span class="positive">Bullish</span>';
+   document.getElementById('oiCheck').innerHTML = '<span class="positive">PE Support Strong</span>';
+   document.getElementById('ivCheck').innerHTML = '<span class="positive">Favorable</span>';
+   document.getElementById('trendBar').style.width = '75%';
+   document.getElementById('trendBar').style.background = 'var(--green)';
+ } else if (pcr <= 0.90) {
+   signal = "BUY PE (DEMO)";
+   side = "PUT (PE)";
+   color = "var(--red)";
+   reason = `${inst} में ${strat} के अनुसार बेयरिश दबाव और कमजोर PCR संकेत मिल रहा है।`;
+   document.getElementById('trendCheck').innerHTML = '<span class="negative">Bearish</span>';
+   document.getElementById('oiCheck').innerHTML = '<span class="negative">CE Resistance High</span>';
+   document.getElementById('ivCheck').innerHTML = '<span class="negative">Elevated</span>';
+   document.getElementById('trendBar').style.width = '70%';
+   document.getElementById('trendBar').style.background = 'var(--red)';
+ } else {
+   signal = "WAIT / NO TRADE";
+   side = "NEUTRAL";
+   color = "var(--yellow)";
+   reason = `${inst} में बाजार साइडवेज/रेंज-बाउंड है। जब तक क्लियर ब्रेकआउट न मिले, ट्रेड से बचें।`;
+   document.getElementById('trendCheck').innerHTML = '<span class="warning">Sideways</span>';
+   document.getElementById('oiCheck').innerHTML = '<span class="warning">Mixed OI</span>';
+   document.getElementById('ivCheck').innerHTML = '<span class="warning">Normal</span>';
+   document.getElementById('trendBar').style.width = '45%';
+   document.getElementById('trendBar').style.background = 'var(--yellow)';
+ }
+
+ const sigEl = document.getElementById('signal');
+ sigEl.textContent = signal;
+ sigEl.style.color = color;
+ document.getElementById('side').textContent = side;
+ document.getElementById('reason').textContent = reason;
 });
-calc();
+
+updateMarketData();
 </script>
 </body>
 </html>
