@@ -6,8 +6,30 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>JS Algo Trading - Advanced NIFTY Analyzer</title>
 <style>
-:root{--bg:#09111f;--panel:#121e30;--line:#293b53;--text:#edf4ff;--muted:#9aacc5;--green:#20c997;--red:#ff647c;--yellow:#f4c45b}
+:root{
+--bg:#f3f6fb;
+--panel:#ffffff;
+--line:#dce3ed;
+--text:#172033;
+--muted:#64748b;
+--green:#059669;
+--red:#dc3545;
+--yellow:#b7791f
+}
 *{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px Arial,sans-serif}
+input,select,button{
+background:#ffffff;
+color:#172033;
+border:1px solid #cbd5e1;
+padding:10px;
+border-radius:7px;
+max-width:100%
+}
+button{cursor:pointer;background:#e8f1ff;color:#174ea6;border-color:#b7cff5;font-weight:bold}
+.signal{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:15px;margin:12px 0}
+.pill{display:inline-block;background:#f1f5f9;border:1px solid var(--line);border-radius:8px;padding:10px;margin:3px}
+td:nth-child(5){font-weight:bold;color:var(--text)}
 body{margin:0;background:var(--bg);color:var(--text);font:14px Arial,sans-serif}
 header,main{max-width:1200px;margin:auto;padding:15px}
 header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
@@ -48,7 +70,6 @@ td:nth-child(5){font-weight:bold;color:white}
 <main>
 <div class="notice">
 <b>DEMO MODE</b><br>
-सभी Market Values काल्पनिक हैं। यह Live Market Data, Financial Advice या वास्तविक Trading Signal नहीं है।
 </div>
 
 <div class="controls">
@@ -61,9 +82,9 @@ td:nth-child(5){font-weight:bold;color:white}
 </label>
 <label>Timeframe
 <select id="timeframe">
-<option>5 मिनट</option>
-<option>15 मिनट</option>
-<option>1 मिनट</option>
+<option>5 Minutes</option>
+<option>15 Minutes</option>
+<option>1 Minutes</option>
 </select>
 </label>
 <label>Strategy
@@ -145,6 +166,17 @@ OI Based Demo Bias: <b id="oiBias" class="yellow">NEUTRAL</b>
 
 <section class="panel">
 <h2>Smart AI Signal Engine</h2>
+  <div class="controls">
+<label>Option Entry ₹
+<input id="entry" type="number" value="180">
+</label>
+<label>SL Points
+<input id="sl" type="number" value="25">
+</label>
+<label>Target Points
+<input id="target" type="number" value="50">
+</label>
+  </div>
 <div class="signal">
 <div class="muted">SMART DECISION</div>
 <div class="big yellow" id="signal">NO TRADE</div>
@@ -163,19 +195,6 @@ OI Based Demo Bias: <b id="oiBias" class="yellow">NEUTRAL</b>
 <p class="small">Score केवल demo rule confirmation है, जीतने की संभावना नहीं। यह वास्तविक AI या Live Signal नहीं है।</p>
 </section>
 
-<section class="panel">
-<h2>Trade Risk Calculator</h2>
-<div class="controls">
-<label>Option Entry ₹<input id="entry" type="number" value="180"></label>
-<label>SL Points<input id="sl" type="number" value="25"></label>
-<label>Target Points<input id="target" type="number" value="50"></label>
-<label>Lot Quantity<input id="qty" type="number" value="65"></label>
-</div>
-<div class="rule">Risk per lot: <b id="risklot">—</b></div>
-<div class="rule">Maximum Quantity within Risk: <b id="qtylimit">—</b></div>
-<div class="rule">Potential Reward: <b id="reward">—</b></div>
-<button id="calc">Calculate Risk</button>
-</section>
 
 <div class="muted" id="stamp">Demo only</div>
 </main>
@@ -189,7 +208,7 @@ const fmt = n => Number(n).toLocaleString('en-IN', {
 
 const markets = {
   'NIFTY 50': { spot: 22450, step: 50, minScore: 70 },
-  'BANK NIFTY': { spot: 48250, step: 100, minScore: 75 },
+  'BANK NIFTY': { spot: 54500, step: 100, minScore: 75 },
   'SENSEX': { spot: 73800, step: 100, minScore: 70 }
 };
 
@@ -389,39 +408,6 @@ function resetSignal() {
   lastAnalysis = null;
 }
 
-function calc() {
-  const riskLimit = getNumber('risk');
-  const sl = getNumber('sl');
-  const target = getNumber('target');
-  const qty = getNumber('qty');
-
-  const actualRisk = sl * qty;
-  const reward = target * qty;
-  const maxQty = sl > 0 && riskLimit > 0
-    ? Math.floor(riskLimit / sl)
-    : 0;
-
-  $('risklot').textContent = '₹' + fmt(actualRisk);
-  $('qtylimit').textContent = fmt(maxQty) + ' units';
-  $('reward').textContent = '₹' + fmt(reward);
-
-  $('risklot').className = actualRisk > riskLimit
-    ? 'red'
-    : 'green';
-
-  return {
-    riskLimit,
-    sl,
-    target,
-    qty,
-    actualRisk,
-    reward,
-    maxQty,
-    riskOK: riskLimit > 0 && sl > 0 &&
-      qty > 0 && actualRisk <= riskLimit
-  };
-}
-
 function analyze() {
   const instrument = $('instrument').value;
   const market = markets[instrument];
@@ -534,11 +520,8 @@ $('expiry').addEventListener('change', () => {
 $('analyze').addEventListener('click', analyze);
 $('calc').addEventListener('click', calc);
 
-['risk', 'entry', 'sl', 'target', 'qty'].forEach(id => {
-  $(id).addEventListener('input', () => {
-    calc();
-    resetSignal();
-  });
+['entry', 'sl', 'target'].forEach(id => {
+  $(id).addEventListener('input', resetSignal);
 });
 
 refreshDemo();
