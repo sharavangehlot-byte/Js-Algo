@@ -16,8 +16,8 @@ button,select,input{background:#0c1524;color:var(--text);border:1px solid var(--
 table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{color:var(--muted);font-weight:600}
 .call{color:var(--green)}.put{color:#ff8998}.tablewrap{overflow-x:auto}
 .signal{padding:14px;border-radius:12px;background:#102c29;border:1px solid #1d6654;margin-bottom:12px}.signal .big{font-size:22px;font-weight:850;color:var(--yellow)}.rule{padding:10px 0;border-bottom:1px solid var(--line)}.rule:last-child{border:0}.bar{height:8px;border-radius:99px;background:#26364d;overflow:hidden;margin-top:7px}.bar span{display:block;height:100%;width:58%;background:var(--green)}.list{padding-left:18px;margin:8px 0}.list li{margin:7px 0}.footer{padding:18px;text-align:center;color:var(--muted);font-size:11px}
-.res-highlight{background:rgba(239, 68, 68, 0.12) !important;}
-.sup-highlight{background:rgba(37, 197, 138, 0.12) !important;}
+.res-highlight{background:rgba(239, 68, 68, 0.15) !important;}
+.sup-highlight{background:rgba(37, 197, 138, 0.15) !important;}
 @media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:1fr}header{position:static}}
 @media(max-width:480px){main{padding:10px}.grid{gap:8px}.panel{padding:12px}.metric{font-size:20px}.brand{font-size:17px}}
 </style>
@@ -47,15 +47,14 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px 6px;b
    <section class="panel" style="margin-bottom:14px">
     <div class="row"><h2>Option Chain Module (Demo)</h2><span class="pill" id="pcr-badge">PCR: 1.04</span></div>
     
-    <!-- Support & Resistance Indicators -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
       <div style="background:#1c1417;border:1px solid #7f1d1d;padding:8px 10px;border-radius:8px;">
         <div style="font-size:11px;color:#fca5a5">Major Resistance (Max Call OI)</div>
-        <div style="font-size:16px;font-weight:800;color:var(--red)" id="res-val">—</div>
+        <div style="font-size:16px;font-weight:800;color:var(--red)" id="res-val">22,600</div>
       </div>
       <div style="background:#10241e;border:1px solid #065f46;padding:8px 10px;border-radius:8px;">
         <div style="font-size:11px;color:#6ee7b7">Major Support (Max Put OI)</div>
-        <div style="font-size:16px;font-weight:800;color:var(--green)" id="sup-val">—</div>
+        <div style="font-size:16px;font-weight:800;color:var(--green)" id="sup-val">22,400</div>
       </div>
     </div>
 
@@ -79,22 +78,27 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px 6px;b
             <th>OI</th>
           </tr>
         </thead>
-        <tbody id="full-chain-body"></tbody>
+        <tbody id="full-chain-body">
+          <tr><td class="call">62,400</td><td class="call">+4,200</td><td>35,000</td><td style="color:#fff">245.0</td><td style="text-align:center;font-weight:800;color:var(--yellow)">22,350</td><td style="color:#fff">68.0</td><td>21,000</td><td class="put">+1,100</td><td class="put">89,000</td></tr>
+          <tr class="sup-highlight"><td class="call">78,000</td><td class="call">+3,100</td><td>42,000</td><td style="color:#fff">210.0</td><td style="text-align:center;font-weight:800;color:var(--yellow)">22,400 <span style="font-size:10px;color:var(--green)">(S)</span></td><td style="color:#fff">95.0</td><td>32,000</td><td class="put">+6,800</td><td class="put" style="font-weight:bold;text-decoration:underline">1,08,000</td></tr>
+          <tr style="background:#18253a"><td class="call">95,000</td><td class="call">+5,400</td><td>55,000</td><td style="color:#fff">175.0</td><td style="text-align:center;font-weight:800;color:var(--yellow);border-left:1px solid var(--line);border-right:1px solid var(--line)">22,450</td><td style="color:#fff">135.0</td><td>48,000</td><td class="put">+4,200</td><td class="put">88,000</td></tr>
+          <tr class="res-highlight"><td class="call" style="font-weight:bold;text-decoration:underline">1,15,000</td><td class="call">+8,500</td><td>68,000</td><td style="color:#fff">130.0</td><td style="text-align:center;font-weight:800;color:var(--yellow)">22,500 <span style="font-size:10px;color:var(--red)">(R)</span></td><td style="color:#fff">185.0</td><td>39,000</td><td class="put">-1,200</td><td class="put">65,000</td></tr>
+          <tr><td class="call">85,000</td><td class="call">+2,100</td><td>38,000</td><td style="color:#fff">98.0</td><td style="text-align:center;font-weight:800;color:var(--yellow)">22,550</td><td style="color:#fff">230.0</td><td>28,000</td><td class="put">+1,800</td><td class="put">52,000</td></tr>
+        </tbody>
       </table>
     </div>
     <div class="row" style="margin-top:12px;font-size:11px;color:var(--muted)">
-      <div>Total CE OI: <b id="total-ce-oi" class="call">0</b></div>
-      <div>Total PE OI: <b id="total-pe-oi" class="put">0</b></div>
-      <div>ATM / Max Pain: <b id="max-pain" style="color:var(--yellow)">—</b></div>
+      <div>Total CE OI: <b id="total-ce-oi" class="call">4,35,400</b></div>
+      <div>Total PE OI: <b id="total-pe-oi" class="put">4,02,000</b></div>
+      <div>ATM / Max Pain: <b id="max-pain" style="color:var(--yellow)">22,450</b></div>
     </div>
    </section>
    <section class="panel">
     <div class="row"><h2>Signal Engine</h2><span class="pill">Rules-based demo</span></div>
-    <div class="signal"><div class="muted small">DEMO DECISION</div><div class="big" id="signal">NO TRADE</div><div id="reason">लाइव डेटा उपलब्ध नहीं; वास्तविक ट्रेड के लिए सिग्नल मान्य नहीं है।</div></div>
+    <div class="signal"><div class="muted small">DEMO DECISION</div><div class="big" id="signal">NO TRADE</div><div id="reason">डेमो डेटा सक्रिय है। नया सिग्नल देखने के लिए Analyze demo दबाएं।</div></div>
     <div class="rule"><div class="row"><span>Trend confirmation</span><b id="trendCheck" class="warning">Pending</b></div><div class="bar"><span id="trendBar" style="width:50%"></span></div></div>
     <div class="rule"><div class="row"><span>Support / Resistance check</span><b id="srCheck" class="warning">Pending</b></div><div class="bar"><span id="srBar" style="width:50%;background:var(--yellow)"></span></div></div>
     <div class="rule"><div class="row"><span>Volatility / IV check</span><b id="ivCheck" class="warning">Pending</b></div><div class="bar"><span id="ivBar" style="width:35%;background:var(--yellow)"></span></div></div>
-    <p class="small muted">इन bars को वास्तविक probability न समझें। लाइव संस्करण में नियमों और डेटा की गुणवत्ता के आधार पर status दिखेगा।</p>
    </section>
   </div>
   <div>
@@ -108,7 +112,7 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px 6px;b
     <div class="rule"><div class="row"><span class="muted">Risk per lot</span><b id="risklot">₹1,625</b></div></div>
     <div class="rule"><div class="row"><span class="muted">Qty within risk limit</span><b id="qtylimit">40</b></div></div>
     <div class="rule"><div class="row"><span class="muted">Potential reward (one lot)</span><b id="reward">₹3,250</b></div></div>
-    <p class="small muted">कैलकुलेशन: SL points × quantity; brokerage, taxes, slippage और gap risk शामिल नहीं।</p>
+    <p class="small muted">कैलकुलेशन: SL points × quantity; brokerage, taxes, slippage शामिल नहीं।</p>
     <button class="primary" id="calc">Calculate risk</button>
    </section>
    <section class="panel" style="margin-bottom:14px">
@@ -124,8 +128,6 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:8px 6px;b
      <li>सिग्नल के साथ data timestamp और source दिखाना।</li>
      <li>डेटा stale या अधूरा हो तो NO TRADE।</li>
      <li>प्रति ट्रेड अधिकतम जोखिम सेटिंग से नियंत्रित करना।</li>
-     <li>पहले paper trading; फिर ही वास्तविक उपयोग पर विचार।</li>
-     <li>यह डेमो ऑर्डर नहीं भेजता और कोई लाभ सुनिश्चित नहीं करता।</li>
     </ul>
    </section>
   </div>
@@ -142,17 +144,12 @@ const configs = {
   "SENSEX": { base: 73800, step: 100, lot: 10, label: "SENSEX Spot (Demo)" }
 };
 
-let currentMarketState = {
-  spot: 0,
-  step: 50,
-  supportStrike: 0,
-  resistanceStrike: 0
-};
+let currentMarketState = { spot: 22450, step: 50, supportStrike: 22400, resistanceStrike: 22500 };
 
 function renderFullOptionChain(spot, step) {
   const atm = Math.round(spot / step) * step;
   const tbody = document.getElementById('full-chain-body');
-  tbody.innerHTML = '';
+  if (!tbody) return;
 
   let totalCe = 0;
   let totalPe = 0;
@@ -161,21 +158,16 @@ function renderFullOptionChain(spot, step) {
   let resStrike = atm;
   let supStrike = atm;
 
-  const rowsData = [];
-  const strikes = [];
-  for (let i = -3; i <= 3; i++) {
-    strikes.push(atm + (i * step));
-  }
+  const rows = [];
+  for (let i = -2; i <= 2; i++) {
+    const s = atm + (i * step);
+    const ceOi = Math.floor(50000 + Math.random() * 70000);
+    const ceChg = Math.floor((Math.random() * 10000) - 2000);
+    const ceVol = Math.floor(20000 + Math.random() * 40000);
 
-  // डेटा जनरेशन और Max OI ट्रैक करना
-  strikes.forEach(s => {
-    const ceOi = Math.floor(45000 + Math.random() * 75000);
-    const ceChg = Math.floor((Math.random() * 12000) - 3000);
-    const ceVol = Math.floor(18000 + Math.random() * 45000);
-
-    const peOi = Math.floor(40000 + Math.random() * 80000);
-    const peChg = Math.floor((Math.random() * 12000) - 3000);
-    const peVol = Math.floor(18000 + Math.random() * 45000);
+    const peOi = Math.floor(50000 + Math.random() * 70000);
+    const peChg = Math.floor((Math.random() * 10000) - 2000);
+    const peVol = Math.floor(20000 + Math.random() * 40000);
 
     const dist = (s - spot);
     const ceLtp = Math.max(5, (160 - (dist * 0.7) + (Math.random() * 10))).toFixed(1);
@@ -184,48 +176,36 @@ function renderFullOptionChain(spot, step) {
     totalCe += ceOi;
     totalPe += peOi;
 
-    if (ceOi > maxCeOi) {
-      maxCeOi = ceOi;
-      resStrike = s;
-    }
-    if (peOi > maxPeOi) {
-      maxPeOi = peOi;
-      supStrike = s;
-    }
+    if (ceOi > maxCeOi) { maxCeOi = ceOi; resStrike = s; }
+    if (peOi > maxPeOi) { maxPeOi = peOi; supStrike = s; }
 
-    rowsData.push({ s, ceOi, ceChg, ceVol, ceLtp, peLtp, peVol, peChg, peOi, isAtm: s === atm });
-  });
+    rows.push({ s, ceOi, ceChg, ceVol, ceLtp, peLtp, peVol, peChg, peOi, isAtm: s === atm });
+  }
 
   currentMarketState.supportStrike = supStrike;
   currentMarketState.resistanceStrike = resStrike;
 
-  // टेबल HTML रेंडर करना
-  rowsData.forEach(row => {
+  tbody.innerHTML = '';
+  rows.forEach(r => {
     const tr = document.createElement('tr');
-    
-    // हाईलाइटिंग: रेजिस्टेंस, सपोर्ट, या ATM
-    if (row.s === resStrike) {
-      tr.className = 'res-highlight';
-    } else if (row.s === supStrike) {
-      tr.className = 'sup-highlight';
-    } else if (row.isAtm) {
-      tr.style.background = '#18253a';
-    }
+    if (r.s === resStrike) tr.className = 'res-highlight';
+    else if (r.s === supStrike) tr.className = 'sup-highlight';
+    else if (r.isAtm) tr.style.background = '#18253a';
 
     tr.innerHTML = `
-      <td class="call" style="${row.s === resStrike ? 'font-weight:bold;text-decoration:underline' : ''}">${fmt(row.ceOi)}</td>
-      <td class="call">${row.ceChg >= 0 ? '+' : ''}${fmt(row.ceChg)}</td>
-      <td>${fmt(row.ceVol)}</td>
-      <td style="color:#fff">${row.ceLtp}</td>
-      <td style="text-align:center;font-weight:800;color:var(--yellow);${row.isAtm ? 'border-left:1px solid var(--line);border-right:1px solid var(--line);' : ''}">
-        ${fmt(row.s)}
-        ${row.s === resStrike ? ' <span style="font-size:10px;color:var(--red)">(R)</span>' : ''}
-        ${row.s === supStrike ? ' <span style="font-size:10px;color:var(--green)">(S)</span>' : ''}
+      <td class="call" style="${r.s === resStrike ? 'font-weight:bold;text-decoration:underline' : ''}">${fmt(r.ceOi)}</td>
+      <td class="call">${r.ceChg >= 0 ? '+' : ''}${fmt(r.ceChg)}</td>
+      <td>${fmt(r.ceVol)}</td>
+      <td style="color:#fff">${r.ceLtp}</td>
+      <td style="text-align:center;font-weight:800;color:var(--yellow);${r.isAtm ? 'border-left:1px solid var(--line);border-right:1px solid var(--line);' : ''}">
+        ${fmt(r.s)}
+        ${r.s === resStrike ? ' <span style="font-size:10px;color:var(--red)">(R)</span>' : ''}
+        ${r.s === supStrike ? ' <span style="font-size:10px;color:var(--green)">(S)</span>' : ''}
       </td>
-      <td style="color:#fff">${row.peLtp}</td>
-      <td>${fmt(row.peVol)}</td>
-      <td class="put">${row.peChg >= 0 ? '+' : ''}${fmt(row.peChg)}</td>
-      <td class="put" style="${row.s === supStrike ? 'font-weight:bold;text-decoration:underline' : ''}">${fmt(row.peOi)}</td>
+      <td style="color:#fff">${r.peLtp}</td>
+      <td>${fmt(r.peVol)}</td>
+      <td class="put">${r.peChg >= 0 ? '+' : ''}${fmt(r.peChg)}</td>
+      <td class="put" style="${r.s === supStrike ? 'font-weight:bold;text-decoration:underline' : ''}">${fmt(r.peOi)}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -236,10 +216,8 @@ function renderFullOptionChain(spot, step) {
   document.getElementById('pcr-badge').textContent = 'PCR: ' + pcr;
   document.getElementById('pcr').textContent = pcr;
   document.getElementById('max-pain').textContent = fmt(atm);
-
-  // Support & Resistance डिस्प्ले अपडेट
-  document.getElementById('res-val').textContent = fmt(resStrike) + ` (${fmt(maxCeOi)} OI)`;
-  document.getElementById('sup-val').textContent = fmt(supStrike) + ` (${fmt(maxPeOi)} OI)`;
+  document.getElementById('res-val').textContent = fmt(resStrike);
+  document.getElementById('sup-val').textContent = fmt(supStrike);
 }
 
 function updateMarketData() {
@@ -281,65 +259,42 @@ function calc(){
  document.getElementById('reward').textContent = '₹' + fmt(target * qty);
 }
 
-document.getElementById('calc').addEventListener('click', calc);
-['risk','sl','target','qty'].forEach(id => document.getElementById(id).addEventListener('input', calc));
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('calc').addEventListener('click', calc);
+  ['risk','sl','target','qty'].forEach(id => document.getElementById(id).addEventListener('input', calc));
 
-document.getElementById('instrument').addEventListener('change', updateMarketData);
-document.getElementById('refresh').addEventListener('click', () => {
- updateMarketData();
- document.getElementById('reason').textContent = 'Demo आंकड़े रिफ्रेश किए गए हैं; रैंडम सिमुलेशन सक्रिय है।';
-});
+  document.getElementById('instrument').addEventListener('change', updateMarketData);
+  document.getElementById('refresh').addEventListener('click', () => {
+    updateMarketData();
+    document.getElementById('reason').textContent = 'Demo आंकड़े रिफ्रेश किए गए हैं; रैंडम सिमुलेशन सक्रिय है।';
+  });
 
-document.getElementById('analyze').addEventListener('click', () => {
- const strat = document.getElementById('strategy').value;
- const inst = document.getElementById('instrument').value;
- const pcr = parseFloat(document.getElementById('pcr').textContent) || 1.0;
- const spot = currentMarketState.spot;
- const sup = currentMarketState.supportStrike;
- const res = currentMarketState.resistanceStrike;
- 
- let signal = "NO TRADE", side = "NO TRADE", color = "var(--yellow)", reason = "सिग्नल नियमों के अनुरूप नहीं है।";
+  document.getElementById('analyze').addEventListener('click', () => {
+    const strat = document.getElementById('strategy').value;
+    const inst = document.getElementById('instrument').value;
+    const pcr = parseFloat(document.getElementById('pcr').textContent) || 1.0;
+    const spot = currentMarketState.spot;
+    const sup = currentMarketState.supportStrike;
+    const res = currentMarketState.resistanceStrike;
+    
+    let signal = "NO TRADE", side = "NO TRADE", color = "var(--yellow)", reason = "सिग्नल नियमों के अनुरूप नहीं है।";
 
- // Support/Resistance proximity calculation
- const distToSup = spot - sup;
- const distToRes = res - spot;
-
- if (pcr >= 1.15 && distToSup > 0) {
-   signal = "BUY CE (DEMO)";
-   side = "CALL (CE)";
-   color = "var(--green)";
-   reason = `${inst}: सपोर्ट (${fmt(sup)}) के ऊपर टिका हुआ है और PCR (${pcr}) बुलिश है।`;
-   document.getElementById('trendCheck').innerHTML = '<span class="positive">Bullish</span>';
-   document.getElementById('srCheck').innerHTML = `<span class="positive">Above Support (${fmt(sup)})</span>`;
-   document.getElementById('ivCheck').innerHTML = '<span class="positive">Favorable</span>';
-   document.getElementById('trendBar').style.width = '80%';
-   document.getElementById('trendBar').style.background = 'var(--green)';
-   document.getElementById('srBar').style.width = '85%';
-   document.getElementById('srBar').style.background = 'var(--green)';
- } else if (pcr <= 0.90 && distToRes > 0) {
-   signal = "BUY PE (DEMO)";
-   side = "PUT (PE)";
-   color = "var(--red)";
-   reason = `${inst}: रेजिस्टेंस (${fmt(res)}) से रिजेक्शन का दबाव है और PCR (${pcr}) बेयरिश है।`;
-   document.getElementById('trendCheck').innerHTML = '<span class="negative">Bearish</span>';
-   document.getElementById('srCheck').innerHTML = `<span class="negative">Near Resistance (${fmt(res)})</span>`;
-   document.getElementById('ivCheck').innerHTML = '<span class="negative">Elevated</span>';
-   document.getElementById('trendBar').style.width = '75%';
-   document.getElementById('trendBar').style.background = 'var(--red)';
-   document.getElementById('srBar').style.width = '80%';
-   document.getElementById('srBar').style.background = 'var(--red)';
- } else {
-   signal = "WAIT / NO TRADE";
-   side = "NEUTRAL";
-   color = "var(--yellow)";
-   reason = `${inst}: भाव Support (${fmt(sup)}) और Resistance (${fmt(res)}) के बीच फंसा है। ब्रेकआउट का इंतज़ार करें।`;
-   document.getElementById('trendCheck').innerHTML = '<span class="warning">Range-Bound</span>';
-   document.getElementById('srCheck').innerHTML = '<span class="warning">Between S & R</span>';
-   document.getElementById('ivCheck').innerHTML = '<span class="warning">Neutral</span>';
-   document.getElementById('trendBar').style.width = '40%';
-   document.getElementById('trendBar').style.background = 'var(--yellow)';
-   document.getElementById('srBar').style.width = '40%';
-   document.getElementById('srBar').style.background = 'var(--yellow)';
- }
-
- const sigEl = document.getElementById('signal')
+    if (pcr >= 1.15 && spot > sup) {
+      signal = "BUY CE (DEMO)";
+      side = "CALL (CE)";
+      color = "var(--green)";
+      reason = `${inst}: सपोर्ट (${fmt(sup)}) के ऊपर मजबूत है और PCR (${pcr}) बुलिश है।`;
+      document.getElementById('trendCheck').innerHTML = '<span class="positive">Bullish</span>';
+      document.getElementById('srCheck').innerHTML = `<span class="positive">Above Support (${fmt(sup)})</span>`;
+      document.getElementById('ivCheck').innerHTML = '<span class="positive">Favorable</span>';
+      document.getElementById('trendBar').style.width = '80%';
+      document.getElementById('trendBar').style.background = 'var(--green)';
+      document.getElementById('srBar').style.width = '85%';
+      document.getElementById('srBar').style.background = 'var(--green)';
+    } else if (pcr <= 0.90 && spot < res) {
+      signal = "BUY PE (DEMO)";
+      side = "PUT (PE)";
+      color = "var(--red)";
+      reason = `${inst}: रेजिस्टेंस (${fmt(res)}) से रिजेक्शन का दबाव है और PCR (${pcr}) बेयरिश है।`;
+      document.getElementById('trendCheck').innerHTML = '<span class="negative">Bearish</span>';
+      document.getElementB
