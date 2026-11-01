@@ -180,208 +180,365 @@ OI Based Demo Bias: <b id="oiBias" class="yellow">NEUTRAL</b>
 <div class="muted" id="stamp">Demo only</div>
 </main>
 
-<script>
-const $=id=>document.getElementById(id);
-const fmt=n=>Number(n).toLocaleString('en-IN',{maximumFractionDigits:2});
 
-const markets={
-'NIFTY 50':{spot:22450,step:50},
-'BANK NIFTY':{spot:48250,step:100},
-'SENSEX':{spot:73800,step:100}
+<script>
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n).toLocaleString('en-IN', {
+  maximumFractionDigits: 2
+});
+
+const markets = {
+  'NIFTY 50': { spot: 22450, step: 50, minScore: 70 },
+  'BANK NIFTY': { spot: 48250, step: 100, minScore: 75 },
+  'SENSEX': { spot: 73800, step: 100, minScore: 70 }
 };
 
-let chainData=[];
-let demoBias='NEUTRAL';
+let chainData = [];
+let demoBias = 'NEUTRAL';
+let demoVix = 15;
+let lastAnalysis = null;
 
-function renderChain(){
- const m=markets[$('instrument').value];
- const spot=Number($('spot').textContent.replace(/,/g,''))||m.spot;
- const atm=Math.round(spot/m.step)*m.step;
- const count=Number($('strikeCount').value);
- const half=Math.floor(count/2);
- let ceTotal=0,peTotal=0,html='';
- chainData=[];
-
- for(let i=-half;i<=half;i++){
-  const strike=atm+i*m.step;
-  const ceOI=Math.round(60000+(i+half)*5200+Math.random()*6000);
-  const peOI=Math.round(60000+(half-i)*5400+Math.random()*6000);
-  const ceChg=Math.round((Math.random()-.25)*6500);
-  const peChg=Math.round((Math.random()-.15)*6500);
-  const ceLtp=Math.max(5,m.step*1.5-i*m.step*.18+Math.random()*10);
-  const peLtp=Math.max(5,m.step*1.5+i*m.step*.18+Math.random()*10);
-  const ceIV=+(12+Math.random()*8).toFixed(1);
-  const peIV=+(12+Math.random()*8).toFixed(1);
-
-  ceTotal+=ceOI;
-  peTotal+=peOI;
-  chainData.push({strike,ceOI,peOI,ceChg,peChg});
-
-  html+=`<tr>
-  <td class="green">${fmt(ceLtp)}</td><td>${ceIV}</td>
-  <td>${fmt(ceOI)}</td><td>${fmt(ceChg)}</td>
-  <td>${fmt(strike)}</td>
-  <td>${fmt(peChg)}</td><td>${fmt(peOI)}</td>
-  <td>${peIV}</td><td class="red">${fmt(peLtp)}</td>
-  </tr>`;
- }
-
- $('chain').innerHTML=html;
- $('totalCE').textContent=fmt(ceTotal);
- $('totalPE').textContent=fmt(peTotal);
- $('atm').textContent=fmt(atm);
- $('maxPain').textContent=fmt(atm);
- $('pcr').textContent=(peTotal/ceTotal).toFixed(2);
- analyzeOI();
+function getNumber(id) {
+  return Number($(id).value) || 0;
 }
 
-function analyzeOI(){
- if(!chainData.length)return;
-
- const maxCE=chainData.reduce((a,b)=>a.ceOI>b.ceOI?a:b);
- const maxPE=chainData.reduce((a,b)=>a.peOI>b.peOI?a:b);
-
- $('callResistance').textContent=fmt(maxCE.strike);
- $('putSupport').textContent=fmt(maxPE.strike);
- $('highestCE').textContent=fmt(maxCE.strike);
- $('highestPE').textContent=fmt(maxPE.strike);
-
- let ceNet=0,peNet=0,html='';
-
- chainData.forEach(r=>{
-  ceNet+=r.ceChg;
-  peNet+=r.peChg;
-
-  const ce=r.ceChg>1200?'Call Writing':r.ceChg< -1200?'Call Unwinding':'Mixed';
-  const pe=r.peChg>1200?'Put Writing':r.peChg< -1200?'Put Unwinding':'Mixed';
-  const view=r.peChg>1200&&r.ceChg<0?'Bullish Pressure':
-  r.ceChg>1200&&r.peChg<0?'Bearish Pressure':'Mixed / Neutral';
-
-  html+=`<tr><td>${fmt(r.strike)}</td><td>${ce}</td><td>${pe}</td><td>${view}</td></tr>`;
- });
-
- $('oiAnalysis').innerHTML=html;
-
- const oiBias=peNet>ceNet+2500?'BULLISH':
- ceNet>peNet+2500?'BEARISH':'NEUTRAL';
-
- $('oiBias').textContent=oiBias;
- $('oiBias').className=oiBias==='BULLISH'?'green':oiBias==='BEARISH'?'red':'yellow';
- $('oiSummary').textContent='Demo CE change: '+fmt(ceNet)+' | PE change: '+fmt(peNet);
+function getTextNumber(id) {
+  return Number($(id).textContent.replace(/,/g, '')) || 0;
 }
 
-function refreshDemo(){
- const m=markets[$('instrument').value];
- const spot=m.spot+(Math.random()-.5)*m.step*.9;
+function renderChain() {
+  const market = markets[$('instrument').value];
+  const spot = getTextNumber('spot') || market.spot;
+  const atm = Math.round(spot / market.step) * market.step;
+  const count = Number($('strikeCount').value);
+  const half = Math.floor(count / 2);
 
- $('spotLabel').textContent=$('instrument').value+' Spot (Demo)';
- $('spot').textContent=fmt(spot);
- $('vix').textContent=(12+Math.random()*7).toFixed(1);
+  let ceTotal = 0;
+  let peTotal = 0;
+  let html = '';
+  chainData = [];
 
- demoBias=['BULLISH','BEARISH','NEUTRAL'][Math.floor(Math.random()*3)];
- $('bias').textContent=demoBias;
- $('bias').className='metric '+(demoBias==='BULLISH'?'green':demoBias==='BEARISH'?'red':'yellow');
+  for (let i = -half; i <= half; i++) {
+    const strike = atm + i * market.step;
 
- $('stamp').textContent='Demo refreshed: '+new Date().toLocaleTimeString('en-IN');
+    const ceOI = Math.round(
+      60000 + (i + half) * 5200 + Math.random() * 6000
+    );
+    const peOI = Math.round(
+      60000 + (half - i) * 5400 + Math.random() * 6000
+    );
 
- renderChain();
- $('signal').textContent='NO TRADE';
- $('side').textContent='NO TRADE';
- $('score').textContent='0/100';
- $('reason').textContent='Demo data refresh हुआ। Analyze Demo दबाएँ।';
+    const ceChg = Math.round((Math.random() - 0.25) * 6500);
+    const peChg = Math.round((Math.random() - 0.15) * 6500);
+
+    const ceLtp = Math.max(
+      5, market.step * 1.5 - i * market.step * 0.18 + Math.random() * 10
+    );
+    const peLtp = Math.max(
+      5, market.step * 1.5 + i * market.step * 0.18 + Math.random() * 10
+    );
+
+    const ceIV = +(12 + Math.random() * 8).toFixed(1);
+    const peIV = +(12 + Math.random() * 8).toFixed(1);
+
+    ceTotal += ceOI;
+    peTotal += peOI;
+
+    chainData.push({ strike, ceOI, peOI, ceChg, peChg });
+
+    html += `<tr>
+      <td class="green">${fmt(ceLtp)}</td>
+      <td>${ceIV}</td>
+      <td>${fmt(ceOI)}</td>
+      <td>${fmt(ceChg)}</td>
+      <td>${fmt(strike)}</td>
+      <td>${fmt(peChg)}</td>
+      <td>${fmt(peOI)}</td>
+      <td>${peIV}</td>
+      <td class="red">${fmt(peLtp)}</td>
+    </tr>`;
+  }
+
+  $('chain').innerHTML = html;
+  $('totalCE').textContent = fmt(ceTotal);
+  $('totalPE').textContent = fmt(peTotal);
+  $('atm').textContent = fmt(atm);
+  $('maxPain').textContent = fmt(atm);
+  $('pcr').textContent = (peTotal / Math.max(ceTotal, 1)).toFixed(2);
+
+  analyzeOI();
 }
 
-function calc(){
- const risk=Number($('risk').value)||0;
- const sl=Number($('sl').value)||0;
- const target=Number($('target').value)||0;
- const qty=Number($('qty').value)||0;
+function analyzeOI() {
+  if (!chainData.length) return;
 
- $('risklot').textContent='₹'+fmt(sl*qty);
- $('qtylimit').textContent=sl>0?fmt(Math.floor(risk/sl)):'—';
- $('reward').textContent='₹'+fmt(target*qty);
+  const maxCE = chainData.reduce(
+    (a, b) => a.ceOI > b.ceOI ? a : b
+  );
+  const maxPE = chainData.reduce(
+    (a, b) => a.peOI > b.peOI ? a : b
+  );
+
+  $('callResistance').textContent = fmt(maxCE.strike);
+  $('putSupport').textContent = fmt(maxPE.strike);
+  $('highestCE').textContent = fmt(maxCE.strike);
+  $('highestPE').textContent = fmt(maxPE.strike);
+
+  let ceNet = 0;
+  let peNet = 0;
+  let html = '';
+
+  chainData.forEach(r => {
+    ceNet += r.ceChg;
+    peNet += r.peChg;
+
+    const ce = r.ceChg > 1200
+      ? 'Call Writing'
+      : r.ceChg < -1200
+        ? 'Call Unwinding'
+        : 'Mixed';
+
+    const pe = r.peChg > 1200
+      ? 'Put Writing'
+      : r.peChg < -1200
+        ? 'Put Unwinding'
+        : 'Mixed';
+
+    const view =
+      r.peChg > 1200 && r.ceChg < -500
+        ? 'Bullish Pressure'
+        : r.ceChg > 1200 && r.peChg < -500
+          ? 'Bearish Pressure'
+          : 'Mixed / Neutral';
+
+    html += `<tr>
+      <td>${fmt(r.strike)}</td>
+      <td>${ce} (${fmt(r.ceChg)})</td>
+      <td>${pe} (${fmt(r.peChg)})</td>
+      <td>${view}</td>
+    </tr>`;
+  });
+
+  $('oiAnalysis').innerHTML = html;
+
+  const diff = peNet - ceNet;
+  const oiBias = diff > 2500
+    ? 'BULLISH'
+    : diff < -2500
+      ? 'BEARISH'
+      : 'NEUTRAL';
+
+  $('oiBias').textContent = oiBias;
+  $('oiBias').className =
+    oiBias === 'BULLISH'
+      ? 'green'
+      : oiBias === 'BEARISH'
+        ? 'red'
+        : 'yellow';
+
+  $('oiSummary').textContent =
+    `Demo CE change: ${fmt(ceNet)} | PE change: ${fmt(peNet)}.`;
+
+  lastAnalysis = null;
 }
 
-function analyze(){
- const spot=Number($('spot').textContent.replace(/,/g,''))||0;
- const pcr=Number($('pcr').textContent)||1;
- const bias=demoBias;
- const oiBias=$('oiBias').textContent;
- const support=Number($('putSupport').textContent.replace(/,/g,''))||0;
- const resistance=Number($('callResistance').textContent.replace(/,/g,''))||0;
+function refreshDemo() {
+  const instrument = $('instrument').value;
+  const market = markets[instrument];
+  const spot = market.spot +
+    (Math.random() - 0.5) * market.step * 0.9;
 
- const risk=Number($('risk').value)||0;
- const entry=Number($('entry').value)||0;
- const sl=Number($('sl').value)||0;
- const target=Number($('target').value)||0;
- const qty=Number($('qty').value)||0;
+  demoVix = +(12 + Math.random() * 7).toFixed(1);
+  demoBias = ['BULLISH', 'BEARISH', 'NEUTRAL'][
+    Math.floor(Math.random() * 3)
+  ];
 
- let bull=0,bear=0;
+  $('spotLabel').textContent = instrument + ' Spot (Demo)';
+  $('spot').textContent = fmt(spot);
+  $('vix').textContent = demoVix.toFixed(1);
+  $('bias').textContent = demoBias;
 
- if(bias==='BULLISH')bull+=25;
- if(bias==='BEARISH')bear+=25;
+  $('bias').className = 'metric ' +
+    (demoBias === 'BULLISH'
+      ? 'green'
+      : demoBias === 'BEARISH'
+        ? 'red'
+        : 'yellow');
 
- if(oiBias==='BULLISH')bull+=30;
- if(oiBias==='BEARISH')bear+=30;
+  $('stamp').textContent =
+    'Demo refreshed: ' + new Date().toLocaleTimeString('en-IN');
 
- if(pcr>1.10)bull+=15;
- if(pcr<0.90)bear+=15;
-
- if(support>0&&spot>support)bull+=10;
- if(resistance>0&&spot<resistance)bear+=10;
-
- let score=Math.max(bull,bear);
- let signal='NO TRADE',side='NO TRADE';
- let reason='पर्याप्त confirmation नहीं मिला।';
-
- if(bull>=70&&bull>bear){
-  signal='CE BUY (DEMO)';
-  side='CE';
-  reason='Bullish market bias, OI और PCR confirmation मिला।';
- }else if(bear>=70&&bear>bull){
-  signal='PE BUY (DEMO)';
-  side='PE';
-  reason='Bearish market bias, OI और PCR confirmation मिला।';
- }
-
- const riskAmount=sl*qty;
- const riskOK=risk>0&&riskAmount>0&&riskAmount<=risk;
- const inputsOK=entry>0&&sl>0&&target>0&&qty>0;
-
- if(!inputsOK){
-  signal='NO TRADE';
-  side='NO TRADE';
-  reason='Entry, SL, Target और Quantity सही भरें।';
- }else if(!riskOK&&side!=='NO TRADE'){
-  signal='NO TRADE';
-  side='NO TRADE';
-  reason='यह quantity आपके निर्धारित risk limit से अधिक है।';
- }
-
- $('signal').textContent=signal;
- $('signal').className='big '+(side==='CE'?'green':side==='PE'?'red':'yellow');
- $('side').textContent=side;
- $('score').textContent=score+'/100';
- $('reason').textContent=reason;
-
- $('trendCheck').textContent=bias+' (Demo)';
- $('oiCheck').textContent=oiBias+' (Demo)';
- $('ivCheck').textContent=pcr.toFixed(2)+' PCR (Demo)';
-
- $('aiEntry').textContent=inputsOK?'₹'+fmt(entry):'—';
- $('aiSL').textContent=inputsOK?'₹'+fmt(entry-sl):'—';
- $('aiTarget').textContent=inputsOK?'₹'+fmt(entry+target):'—';
+  renderChain();
+  resetSignal();
 }
 
-$('refresh').addEventListener('click',refreshDemo);
-$('instrument').addEventListener('change',refreshDemo);
-$('strikeCount').addEventListener('change',renderChain);
-$('expiry').addEventListener('change',renderChain);
-$('analyze').addEventListener('click',analyze);
-$('calc').addEventListener('click',calc);
+function resetSignal() {
+  $('signal').textContent = 'NO TRADE';
+  $('signal').className = 'big yellow';
+  $('side').textContent = 'NO TRADE';
+  $('score').textContent = '0/100';
+  $('reason').textContent = 'Demo data refresh हुआ। Analyze Demo दबाएँ।';
 
-['risk','entry','sl','target','qty'].forEach(id=>{
- $(id).addEventListener('input',calc);
+  $('trendCheck').textContent = 'Pending';
+  $('oiCheck').textContent = 'Pending';
+  $('ivCheck').textContent = 'Pending';
+  $('aiEntry').textContent = '—';
+  $('aiSL').textContent = '—';
+  $('aiTarget').textContent = '—';
+
+  lastAnalysis = null;
+}
+
+function calc() {
+  const riskLimit = getNumber('risk');
+  const sl = getNumber('sl');
+  const target = getNumber('target');
+  const qty = getNumber('qty');
+
+  const actualRisk = sl * qty;
+  const reward = target * qty;
+  const maxQty = sl > 0 && riskLimit > 0
+    ? Math.floor(riskLimit / sl)
+    : 0;
+
+  $('risklot').textContent = '₹' + fmt(actualRisk);
+  $('qtylimit').textContent = fmt(maxQty) + ' units';
+  $('reward').textContent = '₹' + fmt(reward);
+
+  $('risklot').className = actualRisk > riskLimit
+    ? 'red'
+    : 'green';
+
+  return {
+    riskLimit,
+    sl,
+    target,
+    qty,
+    actualRisk,
+    reward,
+    maxQty,
+    riskOK: riskLimit > 0 && sl > 0 &&
+      qty > 0 && actualRisk <= riskLimit
+  };
+}
+
+function analyze() {
+  const instrument = $('instrument').value;
+  const market = markets[instrument];
+
+  const spot = getTextNumber('spot');
+  const pcr = getTextNumber('pcr');
+  const support = getTextNumber('putSupport');
+  const resistance = getTextNumber('callResistance');
+  const oiBias = $('oiBias').textContent;
+  const riskData = calc();
+
+  const entry = getNumber('entry');
+  const sl = getNumber('sl');
+  const target = getNumber('target');
+
+  let bull = 0;
+  let bear = 0;
+  const checks = [];
+
+  // 1. Market trend: demo input only.
+  if (demoBias === 'BULLISH') bull += 25;
+  else if (demoBias === 'BEARISH') bear += 25;
+  checks.push('Trend: ' + demoBias);
+
+  // 2. Option-chain OI confirmation.
+  if (oiBias === 'BULLISH') bull += 25;
+  else if (oiBias === 'BEARISH') bear += 25;
+  checks.push('OI: ' + oiBias);
+
+  // 3. PCR confirmation.
+  if (pcr >= 1.10) bull += 20;
+  else if (pcr <= 0.90) bear += 20;
+  checks.push('PCR: ' + pcr.toFixed(2));
+
+  // 4. Support/resistance context.
+  // OI levels alone are not a confirmed price reaction.
+  if (support > 0 && spot > support) bull += 10;
+  if (resistance > 0 && spot < resistance) bear += 10;
+
+  // 5. VIX caution: high VIX reduces confidence.
+  if (demoVix >= 20) {
+    bull -= 10;
+    bear -= 10;
+    checks.push('VIX caution: High');
+  } else {
+    checks.push('VIX: Normal demo range');
+  }
+
+  // Instrument-specific score threshold.
+  const threshold = market.minScore;
+  bull = Math.max(0, Math.min(100, bull));
+  bear = Math.max(0, Math.min(100, bear));
+
+  const score = Math.max(bull, bear);
+  const inputsOK = spot > 0 && entry > 0 &&
+    sl > 0 && target > 0 && riskData.qty > 0;
+
+  let signal = 'NO TRADE';
+  let side = 'NO TRADE';
+  let reason = 'पर्याप्त confirmation नहीं मिला।';
+
+  if (!inputsOK) {
+    reason = 'Entry, SL, Target और Quantity सही भरें।';
+  } else if (!riskData.riskOK) {
+    reason = `Risk ₹${fmt(riskData.actualRisk)} है, जो आपकी ₹${fmt(riskData.riskLimit)} सीमा से अधिक है। Quantity कम करें।`;
+  } else if (bull >= threshold && bull > bear) {
+    signal = 'CE BUY (DEMO)';
+    side = 'CE';
+    reason = `${instrument}: bullish demo checks threshold पार कर रहे हैं। यह लाइव सिग्नल नहीं है।`;
+  } else if (bear >= threshold && bear > bull) {
+    signal = 'PE BUY (DEMO)';
+    side = 'PE';
+    reason = `${instrument}: bearish demo checks threshold पार कर रहे हैं। यह लाइव सिग्नल नहीं है।`;
+  } else {
+    reason = `Confirmation threshold ${threshold}/100 पूरा नहीं हुआ या संकेत आपस में सहमत नहीं हैं।`;
+  }
+
+  $('signal').textContent = signal;
+  $('signal').className = 'big ' +
+    (side === 'CE' ? 'green' :
+     side === 'PE' ? 'red' : 'yellow');
+
+  $('side').textContent = side;
+  $('score').textContent = score + '/100';
+  $('reason').textContent = reason;
+  $('trendCheck').textContent = demoBias + ' (Demo)';
+  $('oiCheck').textContent = oiBias + ' (Demo)';
+  $('ivCheck').textContent = pcr.toFixed(2) + ' PCR (Demo)';
+
+  $('aiEntry').textContent = inputsOK ? '₹' + fmt(entry) : '—';
+  $('aiSL').textContent = inputsOK ? '₹' + fmt(entry - sl) : '—';
+  $('aiTarget').textContent = inputsOK ? '₹' + fmt(entry + target) : '—';
+
+  lastAnalysis = {
+    instrument, signal, side, score, bull, bear,
+    threshold, reason, risk: riskData.actualRisk
+  };
+}
+
+$('refresh').addEventListener('click', refreshDemo);
+$('instrument').addEventListener('change', refreshDemo);
+$('strikeCount').addEventListener('change', () => {
+  renderChain();
+  resetSignal();
+});
+$('expiry').addEventListener('change', () => {
+  renderChain();
+  resetSignal();
+});
+$('analyze').addEventListener('click', analyze);
+$('calc').addEventListener('click', calc);
+
+['risk', 'entry', 'sl', 'target', 'qty'].forEach(id => {
+  $(id).addEventListener('input', () => {
+    calc();
+    resetSignal();
+  });
 });
 
 refreshDemo();
