@@ -1,217 +1,65 @@
 
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>JS Algo Trading - Advanced Analyzer</title>
-<style>
-:root{--bg:#0b1220;--panel:#121c2d;--line:#29384f;--text:#edf3ff;--muted:#9eb0ca;--green:#25c58a;--red:#ff647c;--yellow:#f5c451}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:14px Arial,sans-serif}
-header,main{padding:16px;max-width:1200px;margin:auto}
-header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-h1{font-size:21px}h2{font-size:16px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px;min-width:0}
-.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.metric{font-size:23px;font-weight:bold;margin-top:8px}
-.muted{color:var(--muted);font-size:12px}
-.green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}
-button,select,input{background:#0b1525;color:white;border:1px solid var(--line);padding:9px;border-radius:7px}
-button{cursor:pointer}.controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
-table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}
-td,th{padding:9px 7px;border-bottom:1px solid var(--line);text-align:right}
-th{color:var(--muted)}.tablewrap{overflow-x:auto}
-.notice{background:#302819;color:#ffe3a0;padding:12px;border-radius:9px;margin-bottom:14px}
-@media(max-width:650px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-</style>
-</head>
-<body>
-<header>
-<div><h1>JS <span class="green">ALGO TRADING</span></h1><div class="muted">Advanced Option Buying Analyzer</div></div>
-<button id="refresh">Refresh Demo</button>
-</header>
-<main>
-<div class="notice">DEMO MODE: सभी आंकड़े काल्पनिक हैं। यह Live Market Data या Trading Advice नहीं है।</div>
+document.getElementById('analyze').addEventListener('click',()=>{
+ const get=id=>document.getElementById(id);
+ const spot=Number(get('spot').textContent.replace(/,/g,''))||0;
+ const pcr=Number(get('pcr').textContent)||1;
+ const bias=get('bias').textContent;
+ const oiBias=get('oiBias').textContent;
+ const support=Number(get('putSupport').textContent.replace(/,/g,''))||0;
+ const resistance=Number(get('callResistance').textContent.replace(/,/g,''))||0;
+ const risk=Number(get('risk').value)||0;
+ const entry=Number(get('entry').value)||0;
+ const sl=Number(get('sl').value)||0;
+ const qty=Number(get('qty').value)||0;
 
-<div class="controls">
-<label>Instrument
-<select id="instrument">
-<option>NIFTY 50</option><option>BANK NIFTY</option><option>SENSEX</option>
-</select></label>
-<label>Timeframe
-<select id="timeframe"><option>5 मिनट</option><option>15 मिनट</option><option>1 मिनट</option></select></label>
-<label>Strategy
-<select id="strategy"><option>Reversal</option><option>Breakout</option><option>Trend Following</option></select></label>
-<label>Max Risk ₹ <input id="risk" type="number" value="1000" style="width:85px"></label>
-<button id="analyze">Analyze Demo</button>
-</div>
+ let bull=0,bear=0;
+ if(bias==='BULLISH') bull+=25;
+ if(bias==='BEARISH') bear+=25;
+ if(oiBias==='BULLISH') bull+=30;
+ if(oiBias==='BEARISH') bear+=30;
+ if(pcr>1.10) bull+=15;
+ if(pcr<0.90) bear+=15;
+ if(support>0 && spot>support) bull+=10;
+ if(resistance>0 && spot<resistance) bear+=10;
 
-<section class="grid">
-<div class="panel"><div class="muted" id="spotLabel">NIFTY Spot</div><div class="metric" id="spot">—</div></div>
-<div class="panel"><div class="muted">Market Bias</div><div class="metric yellow" id="bias">NEUTRAL</div></div>
-<div class="panel"><div class="muted">India VIX</div><div class="metric" id="vix">—</div></div>
-<div class="panel"><div class="muted">PCR</div><div class="metric" id="pcr">—</div></div>
-</section>
-
-<section class="panel">
-<h2>Advanced Option Chain</h2>
-<div class="controls">
-<label>Expiry <select id="expiry"><option>Nearest Weekly</option><option>Next Weekly</option><option>Monthly</option></select></label>
-<label>Strikes <select id="strikeCount"><option value="5">5</option><option value="9" selected>9</option><option value="13">13</option></select></label>
-</div>
-<div class="grid">
-<div class="panel">Total CE OI <b id="totalCE">—</b></div>
-<div class="panel">Total PE OI <b id="totalPE">—</b></div>
-<div class="panel">Max Pain <b id="maxPain">—</b></div>
-<div class="panel">ATM <b id="atm">—</b></div>
-</div>
-<div class="tablewrap"><table>
-<thead><tr><th colspan="4" class="green">CALL CE</th><th>STRIKE</th><th colspan="4" class="red">PUT PE</th></tr>
-<tr><th>LTP</th><th>IV</th><th>OI</th><th>ΔOI</th><th>Strike</th><th>ΔOI</th><th>OI</th><th>IV</th><th>LTP</th></tr></thead>
-<tbody id="chain"></tbody>
-</table></div>
-</section>
-
-<section class="panel">
-<h2>OI Intelligence & Automatic Support / Resistance</h2>
-<div class="grid">
-<div class="panel">Strong Put Support<br><div class="metric green" id="putSupport">—</div></div>
-<div class="panel">Strong Call Resistance<br><div class="metric red" id="callResistance">—</div></div>
-<div class="panel">Highest CE OI Strike<br><div class="metric" id="highestCE">—</div></div>
-<div class="panel">Highest PE OI Strike<br><div class="metric" id="highestPE">—</div></div>
-</div>
-<div class="tablewrap"><table>
-<thead><tr><th>Strike</th><th>CE OI Build-up</th><th>PE OI Build-up</th><th>Interpretation</th></tr></thead>
-<tbody id="oiAnalysis"></tbody>
-</table></div>
-<div class="panel">OI Based Demo Bias: <b id="oiBias" class="yellow">NEUTRAL</b><p id="oiSummary" class="muted"></p></div>
-<p class="muted">High Put OI संभावित Support और High Call OI संभावित Resistance दर्शा सकता है। OI अकेले ट्रेड की पुष्टि नहीं करता।</p>
-</section>
-
-<section class="panel">
-<h2>Signal Engine</h2>
-<div class="metric yellow" id="signal">NO TRADE</div>
-<p id="reason" class="muted">Demo mode: Live data उपलब्ध नहीं।</p>
-</section>
-
-<section class="panel">
-<h2>Trade Risk Calculator</h2>
-<div class="controls">
-<label>Entry ₹ <input id="entry" type="number" value="180"></label>
-<label>SL Points <input id="sl" type="number" value="25"></label>
-<label>Target Points <input id="target" type="number" value="50"></label>
-<label>Lot Quantity <input id="qty" type="number" value="65"></label>
-</div>
-<p>Risk per lot: <b id="risklot">—</b></p>
-<p>Quantity within risk: <b id="qtylimit">—</b></p>
-<p>Potential Reward: <b id="reward">—</b></p>
-<button id="calc">Calculate Risk</button>
-</section>
-<div class="muted" id="stamp">Demo only</div>
-</main>
-
-<script>
-const $=id=>document.getElementById(id);
-const fmt=n=>Number(n).toLocaleString('en-IN',{maximumFractionDigits:2});
-const markets={
-'NIFTY 50':{spot:22450,step:50},
-'BANK NIFTY':{spot:48250,step:100},
-'SENSEX':{spot:73800,step:100}
-};
-let chainData=[];
-
-function renderChain(){
- const m=markets[$('instrument').value];
- const spot=Number($('spot').textContent.replace(/,/g,''))||m.spot;
- const atm=Math.round(spot/m.step)*m.step;
- const count=Number($('strikeCount').value);
- const half=Math.floor(count/2);
- let ceTotal=0,peTotal=0;
- chainData=[];
- let html='';
- for(let i=-half;i<=half;i++){
-  const strike=atm+i*m.step;
-  const ceOI=Math.round(60000+(i+half)*5200+Math.random()*6000);
-  const peOI=Math.round(60000+(half-i)*5400+Math.random()*6000);
-  const ceChg=Math.round((Math.random()-.25)*6500);
-  const peChg=Math.round((Math.random()-.15)*6500);
-  const ceLtp=Math.max(5,m.step*1.5-i*m.step*.18+Math.random()*10);
-  const peLtp=Math.max(5,m.step*1.5+i*m.step*.18+Math.random()*10);
-  const ceIV=+(12+Math.random()*8).toFixed(1);
-  const peIV=+(12+Math.random()*8).toFixed(1);
-  ceTotal+=ceOI;peTotal+=peOI;
-  chainData.push({strike,ceOI,peOI,ceChg,peChg});
-  html+=`<tr><td class="green">${fmt(ceLtp)}</td><td>${ceIV}</td><td>${fmt(ceOI)}</td><td>${fmt(ceChg)}</td><td><b>${fmt(strike)}</b></td><td>${fmt(peChg)}</td><td>${fmt(peOI)}</td><td>${peIV}</td><td class="red">${fmt(peLtp)}</td></tr>`;
+ const score=Math.max(bull,bear);
+ let signal='NO TRADE';
+ let side='NO TRADE';
+ let reason='Signals में पर्याप्त confirmation नहीं है।';
+ 
+ if(bull>=70 && bull>bear){
+   signal='CE BUY (DEMO)';
+   side='CE';
+   reason='Bullish bias + OI + PCR confirmation मिला।';
+ } else if(bear>=70 && bear>bull){
+   signal='PE BUY (DEMO)';
+   side='PE';
+   reason='Bearish bias + OI + PCR confirmation मिला।';
+ } else {
+   reason='Trend, OI और PCR में पर्याप्त एकमत confirmation नहीं है।';
  }
- $('chain').innerHTML=html;
- $('totalCE').textContent=fmt(ceTotal);
- $('totalPE').textContent=fmt(peTotal);
- $('atm').textContent=fmt(atm);
- $('maxPain').textContent=fmt(atm);
- analyzeOI();
-}
 
-function analyzeOI(){
- if(!chainData.length)return;
- const maxCE=chainData.reduce((a,b)=>a.ceOI>b.ceOI?a:b);
- const maxPE=chainData.reduce((a,b)=>a.peOI>b.peOI?a:b);
- $('callResistance').textContent=fmt(maxCE.strike);
- $('putSupport').textContent=fmt(maxPE.strike);
- $('highestCE').textContent=fmt(maxCE.strike);
- $('highestPE').textContent=fmt(maxPE.strike);
- let ceNet=0,peNet=0,html='';
- chainData.forEach(r=>{
-  ceNet+=r.ceChg;peNet+=r.peChg;
-  const ce=r.ceChg>1200?'Call Writing':r.ceChg< -1200?'Call Unwinding':'Mild Change';
-  const pe=r.peChg>1200?'Put Writing':r.peChg< -1200?'Put Unwinding':'Mild Change';
-  const view=r.peChg>1200&&r.ceChg<0?'Bullish Pressure':r.ceChg>1200&&r.peChg<0?'Bearish Pressure':'Mixed / Neutral';
-  html+=`<tr><td>${fmt(r.strike)}</td><td>${ce}</td><td>${pe}</td><td>${view}</td></tr>`;
- });
- $('oiAnalysis').innerHTML=html;
- const bias=peNet>ceNet+2500?'BULLISH':ceNet>peNet+2500?'BEARISH':'NEUTRAL';
- $('oiBias').textContent=bias;
- $('oiSummary').textContent=`Demo net CE change: ${fmt(ceNet)} · PE change: ${fmt(peNet)}. यह वास्तविक बाजार संकेत नहीं है।`;
-}
+ const riskPerLot=sl*qty;
+ const riskOK=risk>0 && riskPerLot>0 && riskPerLot<=risk;
+ if(!riskOK && side!=='NO TRADE'){
+   signal='NO TRADE';
+   side='NO TRADE';
+   reason='Risk limit से अधिक है। Quantity या SL घटाएँ।';
+ }
+ if(entry<=0 || sl<=0 || qty<=0){
+   signal='NO TRADE';
+   side='NO TRADE';
+   reason='Entry, SL और Lot Quantity सही भरें।';
+ }
 
-function refreshDemo(){
- const m=markets[$('instrument').value];
- const spot=m.spot+(Math.random()-.5)*m.step*.9;
- $('spotLabel').textContent=$('instrument').value+' Spot (Demo)';
- $('spot').textContent=fmt(spot);
- $('vix').textContent=(12+Math.random()*7).toFixed(1);
- $('pcr').textContent=(.82+Math.random()*.48).toFixed(2);
- const bias=['BULLISH','BEARISH','NEUTRAL'][Math.floor(Math.random()*3)];
- $('bias').textContent=bias;
- $('bias').className='metric '+(bias==='BULLISH'?'green':bias==='BEARISH'?'red':'yellow');
- $('stamp').textContent='Demo refreshed: '+new Date().toLocaleTimeString('en-IN');
- $('reason').textContent='Demo values refresh hui hain; live market data nahi.';
- renderChain();
-}
-
-function calc(){
- const risk=Number($('risk').value)||0;
- const sl=Number($('sl').value)||0;
- const target=Number($('target').value)||0;
- const qty=Number($('qty').value)||1;
- $('risklot').textContent='₹'+fmt(sl*qty);
- $('qtylimit').textContent=sl>0?fmt(Math.floor(risk/sl)):'—';
- $('reward').textContent='₹'+fmt(target*qty);
-}
-
-$('refresh').addEventListener('click',refreshDemo);
-$('instrument').addEventListener('change',refreshDemo);
-$('strikeCount').addEventListener('change',renderChain);
-$('expiry').addEventListener('change',renderChain);
-$('calc').addEventListener('click',calc);
-['risk','sl','target','qty'].forEach(id=>$(id).addEventListener('input',calc));
-$('analyze').addEventListener('click',()=>{
- $('signal').textContent='NO TRADE';
- $('reason').textContent=$('instrument').value+' · '+$('timeframe').value+' · '+$('strategy').value+': Live verified data उपलब्ध नहीं है, इसलिए वास्तविक CE/PE signal नहीं दिया जा रहा।';
+ get('signal').textContent=signal;
+ get('side').textContent=side;
+ get('score').textContent=score+'/100';
+ get('reason').textContent=reason;
+ get('trendCheck').textContent=bias;
+ get('oiCheck').textContent=oiBias;
+ get('ivCheck').textContent=pcr.toFixed(2)+' PCR';
+ get('aiEntry').textContent=entry>0?'₹'+entry:'—';
+ get('aiSL').textContent=entry>0 && sl>0?'₹'+(entry-sl).toFixed(2):'—';
+ get('aiTarget').textContent=entry>0 && sl>0?'₹'+(entry+sl*2).toFixed(2):'—';
 });
-refreshDemo();
-calc();
-</script>
-</body>
-</html>
-
