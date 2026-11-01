@@ -1,65 +1,392 @@
 
-document.getElementById('analyze').addEventListener('click',()=>{
- const get=id=>document.getElementById(id);
- const spot=Number(get('spot').textContent.replace(/,/g,''))||0;
- const pcr=Number(get('pcr').textContent)||1;
- const bias=get('bias').textContent;
- const oiBias=get('oiBias').textContent;
- const support=Number(get('putSupport').textContent.replace(/,/g,''))||0;
- const resistance=Number(get('callResistance').textContent.replace(/,/g,''))||0;
- const risk=Number(get('risk').value)||0;
- const entry=Number(get('entry').value)||0;
- const sl=Number(get('sl').value)||0;
- const qty=Number(get('qty').value)||0;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JS Algo Trading - Advanced NIFTY Analyzer</title>
+<style>
+:root{--bg:#09111f;--panel:#121e30;--line:#293b53;--text:#edf4ff;--muted:#9aacc5;--green:#20c997;--red:#ff647c;--yellow:#f4c45b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px Arial,sans-serif}
+header,main{max-width:1200px;margin:auto;padding:15px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+h1{font-size:22px;margin:5px 0}
+h2{font-size:17px;margin:5px 0 14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.metric{font-size:23px;font-weight:bold;margin-top:9px}
+.muted,.small{color:var(--muted);font-size:12px}
+.green{color:var(--green)}.red{color:var(--red)}.yellow{color:var(--yellow)}
+.controls{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}
+label{display:flex;flex-direction:column;gap:5px;color:var(--muted);font-size:12px}
+input,select,button{background:#0a1525;color:white;border:1px solid var(--line);padding:10px;border-radius:7px;max-width:100%}
+button{cursor:pointer;background:#164b54;border-color:#287c7e;font-weight:bold}
+button:active{opacity:.7}
+.notice{background:#382c18;color:#ffe2a0;padding:12px;border-radius:9px;margin-bottom:14px;line-height:1.5}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;white-space:nowrap;font-size:12px}
+th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:right}
+th{color:var(--muted)}
+td:nth-child(5){font-weight:bold;color:white}
+.signal{background:#0b1728;border:1px solid var(--line);border-radius:10px;padding:15px;margin:12px 0}
+.big{font-size:27px;font-weight:bold;margin:8px 0}
+.pill{display:inline-block;background:#1b2c40;border:1px solid var(--line);border-radius:8px;padding:10px;margin:3px}
+.rule{padding:10px 2px;border-bottom:1px solid var(--line)}
+@media(max-width:650px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric{font-size:20px}header h1{font-size:19px}}
+</style>
+</head>
+<body>
+<header>
+<div>
+<h1>JS <span class="green">ALGO TRADING</span></h1>
+<div class="muted">Advanced NIFTY Option Buying Analyzer</div>
+</div>
+<button id="refresh">Refresh Demo</button>
+</header>
+
+<main>
+<div class="notice">
+<b>DEMO MODE</b><br>
+सभी Market Values काल्पनिक हैं। यह Live Market Data, Financial Advice या वास्तविक Trading Signal नहीं है।
+</div>
+
+<div class="controls">
+<label>Instrument
+<select id="instrument">
+<option>NIFTY 50</option>
+<option>BANK NIFTY</option>
+<option>SENSEX</option>
+</select>
+</label>
+<label>Timeframe
+<select id="timeframe">
+<option>5 मिनट</option>
+<option>15 मिनट</option>
+<option>1 मिनट</option>
+</select>
+</label>
+<label>Strategy
+<select id="strategy">
+<option>Smart AI Mode</option>
+<option>Reversal</option>
+<option>Breakout</option>
+<option>Trend Following</option>
+</select>
+</label>
+<label>Max Risk ₹
+<input id="risk" type="number" value="1000">
+</label>
+<button id="analyze">Analyze Demo</button>
+</div>
+
+<section class="grid">
+<div class="panel"><div class="muted" id="spotLabel">NIFTY Spot</div><div class="metric" id="spot">—</div></div>
+<div class="panel"><div class="muted">Market Bias</div><div class="metric yellow" id="bias">NEUTRAL</div></div>
+<div class="panel"><div class="muted">India VIX</div><div class="metric" id="vix">—</div></div>
+<div class="panel"><div class="muted">PCR</div><div class="metric" id="pcr">—</div></div>
+</section>
+
+<section class="panel">
+<h2>Advanced Option Chain</h2>
+<div class="controls">
+<label>Expiry
+<select id="expiry">
+<option>Nearest Weekly</option>
+<option>Next Weekly</option>
+<option>Monthly</option>
+</select>
+</label>
+<label>Strikes
+<select id="strikeCount">
+<option value="5">5 Strikes</option>
+<option value="9" selected>9 Strikes</option>
+<option value="13">13 Strikes</option>
+</select>
+</label>
+</div>
+<div class="grid">
+<div class="panel">Total CE OI<div class="metric" id="totalCE">—</div></div>
+<div class="panel">Total PE OI<div class="metric" id="totalPE">—</div></div>
+<div class="panel">Max Pain<div class="metric" id="maxPain">—</div></div>
+<div class="panel">ATM Strike<div class="metric" id="atm">—</div></div>
+</div>
+<div class="tablewrap">
+<table>
+<thead>
+<tr><th colspan="4" class="green">CALL CE</th><th>STRIKE</th><th colspan="4" class="red">PUT PE</th></tr>
+<tr><th>LTP</th><th>IV</th><th>OI</th><th>ΔOI</th><th>Strike</th><th>ΔOI</th><th>OI</th><th>IV</th><th>LTP</th></tr>
+</thead>
+<tbody id="chain"></tbody>
+</table>
+</div>
+</section>
+
+<section class="panel">
+<h2>OI Intelligence & Automatic Support / Resistance</h2>
+<div class="grid">
+<div class="panel">Strong Put Support<div class="metric green" id="putSupport">—</div></div>
+<div class="panel">Strong Call Resistance<div class="metric red" id="callResistance">—</div></div>
+<div class="panel">Highest CE OI Strike<div class="metric" id="highestCE">—</div></div>
+<div class="panel">Highest PE OI Strike<div class="metric" id="highestPE">—</div></div>
+</div>
+<div class="tablewrap">
+<table>
+<thead><tr><th>Strike</th><th>CE OI Change</th><th>PE OI Change</th><th>Interpretation</th></tr></thead>
+<tbody id="oiAnalysis"></tbody>
+</table>
+</div>
+<div class="signal">
+OI Based Demo Bias: <b id="oiBias" class="yellow">NEUTRAL</b>
+<p class="muted" id="oiSummary">Waiting for demo analysis.</p>
+</div>
+<p class="small">High Put OI और Call OI संभावित Support/Resistance बता सकते हैं। OI अकेले ट्रेड की पुष्टि नहीं करता।</p>
+</section>
+
+<section class="panel">
+<h2>Smart AI Signal Engine</h2>
+<div class="signal">
+<div class="muted">SMART DECISION</div>
+<div class="big yellow" id="signal">NO TRADE</div>
+<div id="reason" class="muted">Analyze Demo दबाएँ।</div>
+</div>
+<div class="grid">
+<div class="pill">Confirmation Score<br><b id="score">0/100</b></div>
+<div class="pill">Suggested Side<br><b id="side">NO TRADE</b></div>
+</div>
+<div class="rule">Trend Confirmation: <b id="trendCheck">Pending</b></div>
+<div class="rule">OI Confirmation: <b id="oiCheck">Pending</b></div>
+<div class="rule">PCR Check: <b id="ivCheck">Pending</b></div>
+<div class="rule">Entry Premium: <b id="aiEntry">—</b></div>
+<div class="rule">Stop Loss: <b id="aiSL">—</b></div>
+<div class="rule">Target 1: <b id="aiTarget">—</b></div>
+<p class="small">Score केवल demo rule confirmation है, जीतने की संभावना नहीं। यह वास्तविक AI या Live Signal नहीं है।</p>
+</section>
+
+<section class="panel">
+<h2>Trade Risk Calculator</h2>
+<div class="controls">
+<label>Option Entry ₹<input id="entry" type="number" value="180"></label>
+<label>SL Points<input id="sl" type="number" value="25"></label>
+<label>Target Points<input id="target" type="number" value="50"></label>
+<label>Lot Quantity<input id="qty" type="number" value="65"></label>
+</div>
+<div class="rule">Risk per lot: <b id="risklot">—</b></div>
+<div class="rule">Maximum Quantity within Risk: <b id="qtylimit">—</b></div>
+<div class="rule">Potential Reward: <b id="reward">—</b></div>
+<button id="calc">Calculate Risk</button>
+</section>
+
+<div class="muted" id="stamp">Demo only</div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>Number(n).toLocaleString('en-IN',{maximumFractionDigits:2});
+
+const markets={
+'NIFTY 50':{spot:22450,step:50},
+'BANK NIFTY':{spot:48250,step:100},
+'SENSEX':{spot:73800,step:100}
+};
+
+let chainData=[];
+let demoBias='NEUTRAL';
+
+function renderChain(){
+ const m=markets[$('instrument').value];
+ const spot=Number($('spot').textContent.replace(/,/g,''))||m.spot;
+ const atm=Math.round(spot/m.step)*m.step;
+ const count=Number($('strikeCount').value);
+ const half=Math.floor(count/2);
+ let ceTotal=0,peTotal=0,html='';
+ chainData=[];
+
+ for(let i=-half;i<=half;i++){
+  const strike=atm+i*m.step;
+  const ceOI=Math.round(60000+(i+half)*5200+Math.random()*6000);
+  const peOI=Math.round(60000+(half-i)*5400+Math.random()*6000);
+  const ceChg=Math.round((Math.random()-.25)*6500);
+  const peChg=Math.round((Math.random()-.15)*6500);
+  const ceLtp=Math.max(5,m.step*1.5-i*m.step*.18+Math.random()*10);
+  const peLtp=Math.max(5,m.step*1.5+i*m.step*.18+Math.random()*10);
+  const ceIV=+(12+Math.random()*8).toFixed(1);
+  const peIV=+(12+Math.random()*8).toFixed(1);
+
+  ceTotal+=ceOI;
+  peTotal+=peOI;
+  chainData.push({strike,ceOI,peOI,ceChg,peChg});
+
+  html+=`<tr>
+  <td class="green">${fmt(ceLtp)}</td><td>${ceIV}</td>
+  <td>${fmt(ceOI)}</td><td>${fmt(ceChg)}</td>
+  <td>${fmt(strike)}</td>
+  <td>${fmt(peChg)}</td><td>${fmt(peOI)}</td>
+  <td>${peIV}</td><td class="red">${fmt(peLtp)}</td>
+  </tr>`;
+ }
+
+ $('chain').innerHTML=html;
+ $('totalCE').textContent=fmt(ceTotal);
+ $('totalPE').textContent=fmt(peTotal);
+ $('atm').textContent=fmt(atm);
+ $('maxPain').textContent=fmt(atm);
+ $('pcr').textContent=(peTotal/ceTotal).toFixed(2);
+ analyzeOI();
+}
+
+function analyzeOI(){
+ if(!chainData.length)return;
+
+ const maxCE=chainData.reduce((a,b)=>a.ceOI>b.ceOI?a:b);
+ const maxPE=chainData.reduce((a,b)=>a.peOI>b.peOI?a:b);
+
+ $('callResistance').textContent=fmt(maxCE.strike);
+ $('putSupport').textContent=fmt(maxPE.strike);
+ $('highestCE').textContent=fmt(maxCE.strike);
+ $('highestPE').textContent=fmt(maxPE.strike);
+
+ let ceNet=0,peNet=0,html='';
+
+ chainData.forEach(r=>{
+  ceNet+=r.ceChg;
+  peNet+=r.peChg;
+
+  const ce=r.ceChg>1200?'Call Writing':r.ceChg< -1200?'Call Unwinding':'Mixed';
+  const pe=r.peChg>1200?'Put Writing':r.peChg< -1200?'Put Unwinding':'Mixed';
+  const view=r.peChg>1200&&r.ceChg<0?'Bullish Pressure':
+  r.ceChg>1200&&r.peChg<0?'Bearish Pressure':'Mixed / Neutral';
+
+  html+=`<tr><td>${fmt(r.strike)}</td><td>${ce}</td><td>${pe}</td><td>${view}</td></tr>`;
+ });
+
+ $('oiAnalysis').innerHTML=html;
+
+ const oiBias=peNet>ceNet+2500?'BULLISH':
+ ceNet>peNet+2500?'BEARISH':'NEUTRAL';
+
+ $('oiBias').textContent=oiBias;
+ $('oiBias').className=oiBias==='BULLISH'?'green':oiBias==='BEARISH'?'red':'yellow';
+ $('oiSummary').textContent='Demo CE change: '+fmt(ceNet)+' | PE change: '+fmt(peNet);
+}
+
+function refreshDemo(){
+ const m=markets[$('instrument').value];
+ const spot=m.spot+(Math.random()-.5)*m.step*.9;
+
+ $('spotLabel').textContent=$('instrument').value+' Spot (Demo)';
+ $('spot').textContent=fmt(spot);
+ $('vix').textContent=(12+Math.random()*7).toFixed(1);
+
+ demoBias=['BULLISH','BEARISH','NEUTRAL'][Math.floor(Math.random()*3)];
+ $('bias').textContent=demoBias;
+ $('bias').className='metric '+(demoBias==='BULLISH'?'green':demoBias==='BEARISH'?'red':'yellow');
+
+ $('stamp').textContent='Demo refreshed: '+new Date().toLocaleTimeString('en-IN');
+
+ renderChain();
+ $('signal').textContent='NO TRADE';
+ $('side').textContent='NO TRADE';
+ $('score').textContent='0/100';
+ $('reason').textContent='Demo data refresh हुआ। Analyze Demo दबाएँ।';
+}
+
+function calc(){
+ const risk=Number($('risk').value)||0;
+ const sl=Number($('sl').value)||0;
+ const target=Number($('target').value)||0;
+ const qty=Number($('qty').value)||0;
+
+ $('risklot').textContent='₹'+fmt(sl*qty);
+ $('qtylimit').textContent=sl>0?fmt(Math.floor(risk/sl)):'—';
+ $('reward').textContent='₹'+fmt(target*qty);
+}
+
+function analyze(){
+ const spot=Number($('spot').textContent.replace(/,/g,''))||0;
+ const pcr=Number($('pcr').textContent)||1;
+ const bias=demoBias;
+ const oiBias=$('oiBias').textContent;
+ const support=Number($('putSupport').textContent.replace(/,/g,''))||0;
+ const resistance=Number($('callResistance').textContent.replace(/,/g,''))||0;
+
+ const risk=Number($('risk').value)||0;
+ const entry=Number($('entry').value)||0;
+ const sl=Number($('sl').value)||0;
+ const target=Number($('target').value)||0;
+ const qty=Number($('qty').value)||0;
 
  let bull=0,bear=0;
- if(bias==='BULLISH') bull+=25;
- if(bias==='BEARISH') bear+=25;
- if(oiBias==='BULLISH') bull+=30;
- if(oiBias==='BEARISH') bear+=30;
- if(pcr>1.10) bull+=15;
- if(pcr<0.90) bear+=15;
- if(support>0 && spot>support) bull+=10;
- if(resistance>0 && spot<resistance) bear+=10;
 
- const score=Math.max(bull,bear);
- let signal='NO TRADE';
- let side='NO TRADE';
- let reason='Signals में पर्याप्त confirmation नहीं है।';
- 
- if(bull>=70 && bull>bear){
-   signal='CE BUY (DEMO)';
-   side='CE';
-   reason='Bullish bias + OI + PCR confirmation मिला।';
- } else if(bear>=70 && bear>bull){
-   signal='PE BUY (DEMO)';
-   side='PE';
-   reason='Bearish bias + OI + PCR confirmation मिला।';
- } else {
-   reason='Trend, OI और PCR में पर्याप्त एकमत confirmation नहीं है।';
+ if(bias==='BULLISH')bull+=25;
+ if(bias==='BEARISH')bear+=25;
+
+ if(oiBias==='BULLISH')bull+=30;
+ if(oiBias==='BEARISH')bear+=30;
+
+ if(pcr>1.10)bull+=15;
+ if(pcr<0.90)bear+=15;
+
+ if(support>0&&spot>support)bull+=10;
+ if(resistance>0&&spot<resistance)bear+=10;
+
+ let score=Math.max(bull,bear);
+ let signal='NO TRADE',side='NO TRADE';
+ let reason='पर्याप्त confirmation नहीं मिला।';
+
+ if(bull>=70&&bull>bear){
+  signal='CE BUY (DEMO)';
+  side='CE';
+  reason='Bullish market bias, OI और PCR confirmation मिला।';
+ }else if(bear>=70&&bear>bull){
+  signal='PE BUY (DEMO)';
+  side='PE';
+  reason='Bearish market bias, OI और PCR confirmation मिला।';
  }
 
- const riskPerLot=sl*qty;
- const riskOK=risk>0 && riskPerLot>0 && riskPerLot<=risk;
- if(!riskOK && side!=='NO TRADE'){
-   signal='NO TRADE';
-   side='NO TRADE';
-   reason='Risk limit से अधिक है। Quantity या SL घटाएँ।';
- }
- if(entry<=0 || sl<=0 || qty<=0){
-   signal='NO TRADE';
-   side='NO TRADE';
-   reason='Entry, SL और Lot Quantity सही भरें।';
+ const riskAmount=sl*qty;
+ const riskOK=risk>0&&riskAmount>0&&riskAmount<=risk;
+ const inputsOK=entry>0&&sl>0&&target>0&&qty>0;
+
+ if(!inputsOK){
+  signal='NO TRADE';
+  side='NO TRADE';
+  reason='Entry, SL, Target और Quantity सही भरें।';
+ }else if(!riskOK&&side!=='NO TRADE'){
+  signal='NO TRADE';
+  side='NO TRADE';
+  reason='यह quantity आपके निर्धारित risk limit से अधिक है।';
  }
 
- get('signal').textContent=signal;
- get('side').textContent=side;
- get('score').textContent=score+'/100';
- get('reason').textContent=reason;
- get('trendCheck').textContent=bias;
- get('oiCheck').textContent=oiBias;
- get('ivCheck').textContent=pcr.toFixed(2)+' PCR';
- get('aiEntry').textContent=entry>0?'₹'+entry:'—';
- get('aiSL').textContent=entry>0 && sl>0?'₹'+(entry-sl).toFixed(2):'—';
- get('aiTarget').textContent=entry>0 && sl>0?'₹'+(entry+sl*2).toFixed(2):'—';
+ $('signal').textContent=signal;
+ $('signal').className='big '+(side==='CE'?'green':side==='PE'?'red':'yellow');
+ $('side').textContent=side;
+ $('score').textContent=score+'/100';
+ $('reason').textContent=reason;
+
+ $('trendCheck').textContent=bias+' (Demo)';
+ $('oiCheck').textContent=oiBias+' (Demo)';
+ $('ivCheck').textContent=pcr.toFixed(2)+' PCR (Demo)';
+
+ $('aiEntry').textContent=inputsOK?'₹'+fmt(entry):'—';
+ $('aiSL').textContent=inputsOK?'₹'+fmt(entry-sl):'—';
+ $('aiTarget').textContent=inputsOK?'₹'+fmt(entry+target):'—';
+}
+
+$('refresh').addEventListener('click',refreshDemo);
+$('instrument').addEventListener('change',refreshDemo);
+$('strikeCount').addEventListener('change',renderChain);
+$('expiry').addEventListener('change',renderChain);
+$('analyze').addEventListener('click',analyze);
+$('calc').addEventListener('click',calc);
+
+['risk','entry','sl','target','qty'].forEach(id=>{
+ $(id).addEventListener('input',calc);
 });
+
+refreshDemo();
+calc();
+</script>
+</body>
+ </html>
+ 
