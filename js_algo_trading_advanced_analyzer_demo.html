@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JS Algo Trading — Advanced NIFTY Analyzer</title>
+<style>
+:root{--bg:#0b1220;--panel:#121c2d;--panel2:#172338;--line:#29384f;--text:#edf3ff;--muted:#9eb0ca;--green:#25c58a;--red:#ff647c;--yellow:#f5c451;--blue:#6ea8fe}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;gap:14px;justify-content:space-between;align-items:center;flex-wrap:wrap;background:#0e1727;position:sticky;top:0;z-index:5}
+.brand{font-size:20px;font-weight:800;letter-spacing:.2px}.brand span{color:var(--green)}.sub{color:var(--muted);font-size:12px}
+.badge{display:inline-block;border:1px solid #8a6822;color:#ffdc7b;background:#332a16;border-radius:999px;padding:5px 10px;font-size:11px;font-weight:700}
+main{max-width:1400px;margin:auto;padding:18px}.notice{padding:12px 14px;border:1px solid #735d27;background:#2b2618;color:#ffe3a0;border-radius:10px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}.layout{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px;min-width:0}.panel h2{font-size:15px;margin:0 0 12px}.metric{font-size:24px;font-weight:800;margin:6px 0}.muted{color:var(--muted)}.positive{color:var(--green)}.negative{color:var(--red)}.warning{color:var(--yellow)}.small{font-size:12px}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.pill{border-radius:8px;background:var(--panel2);padding:5px 8px;font-size:12px}
+button,select,input{background:#0c1524;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit}button{cursor:pointer}button.primary{background:#176d56;border-color:#25886d;font-weight:700}button:hover{filter:brightness(1.15)}.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.controls label{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:9px 7px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{color:var(--muted);font-weight:600}th:first-child,td:first-child{text-align:left}.call{color:var(--green)}.put{color:#ff8998}.tablewrap{overflow:auto}
+.signal{padding:14px;border-radius:12px;background:#102c29;border:1px solid #1d6654;margin-bottom:12px}.signal .big{font-size:22px;font-weight:850;color:var(--yellow)}.rule{padding:10px 0;border-bottom:1px solid var(--line)}.rule:last-child{border:0}.bar{height:8px;border-radius:99px;background:#26364d;overflow:hidden;margin-top:7px}.bar span{display:block;height:100%;width:58%;background:var(--green)}.list{padding-left:18px;margin:8px 0}.list li{margin:7px 0}.footer{padding:18px;text-align:center;color:var(--muted);font-size:11px}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:1fr}header{position:static}}
+@media(max-width:480px){main{padding:10px}.grid{gap:8px}.panel{padding:12px}.metric{font-size:20px}.brand{font-size:17px}}
+</style>
+</head>
+<body>
+<header>
+ <div><div class="brand">JS <span>ALGO TRADING</span></div><div class="sub">Advanced NIFTY Option Buying Analyzer</div></div>
+ <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="badge">DEMO MODE · NO LIVE DATA</span><button id="refresh">Refresh demo</button></div>
+</header>
+<main>
+ <div class="notice"><b>महत्वपूर्ण:</b> यह शुरुआती डेमो है। यहाँ दिखाए गए सभी बाजार आँकड़े और सिग्नल उदाहरण के लिए हैं—लाइव NIFTY डेटा नहीं। अभी कोई broker/API कनेक्शन नहीं है और यह कोई ऑर्डर नहीं भेजता।</div>
+ <div class="controls">
+  <label>Instrument <select id="instrument"><option>NIFTY 50</option><option>BANK NIFTY</option><option>SENSEX</option></select></label>
+  <label>Timeframe <select id="timeframe"><option>5 मिनट</option><option>15 मिनट</option><option>1 मिनट</option></select></label>
+  <label>Strategy <select id="strategy"><option>Reversal + Confirmation</option><option>Breakout + Retest</option><option>Trend Following</option></select></label>
+  <label>Max risk ₹ <input id="risk" type="number" min="100" step="100" value="1000" style="width:95px"></label>
+  <button class="primary" id="analyze">Analyze demo</button>
+ </div>
+ <section class="grid">
+  <div class="panel"><div class="muted">NIFTY Spot (Demo)</div><div class="metric" id="spot">22,450.00</div><div class="small warning">Not live-verified</div></div>
+  <div class="panel"><div class="muted">Market Bias (Demo)</div><div class="metric warning" id="bias">NEUTRAL</div><div class="small muted">Price action + momentum</div></div>
+  <div class="panel"><div class="muted">India VIX (Demo)</div><div class="metric" id="vix">14.8</div><div class="small muted">Volatility context only</div></div>
+  <div class="panel"><div class="muted">PCR (Demo)</div><div class="metric" id="pcr">1.04</div><div class="small muted">OI-based ratio example</div></div>
+ </section>
+ <div class="layout">
+  <div>
+   <section class="panel" style="margin-bottom:14px">
+    <div class="row"><h2>Option Chain Snapshot</h2><span class="pill">Illustrative values</span></div>
+    <div class="tablewrap"><table><thead><tr><th>CE OI</th><th>CE ΔOI</th><th>Strike</th><th>PE ΔOI</th><th>PE OI</th></tr></thead><tbody id="chain">
+    <tr><td class="call">82,400</td><td class="call">+3,200</td><td>22,400</td><td class="put">+5,100</td><td class="put">91,700</td></tr>
+    <tr><td class="call">95,200</td><td class="call">+4,800</td><td>22,450</td><td class="put">+3,900</td><td class="put">88,300</td></tr>
+    <tr><td class="call">1,10,500</td><td class="call">+6,200</td><td>22,500</td><td class="put">+2,700</td><td class="put">76,900</td></tr>
+    <tr><td class="call">1,24,100</td><td class="call">+7,000</td><td>22,550</td><td class="put">+1,900</td><td class="put">69,200</td></tr>
+    </tbody></table></div>
+    <p class="small muted">Live build में Dhan API या चुने गए market-data provider से उपलब्ध डेटा जोड़ा जाएगा। OI अकेले दिशा की पुष्टि नहीं करता।</p>
+   </section>
+   <section class="panel">
+    <div class="row"><h2>Signal Engine</h2><span class="pill">Rules-based demo</span></div>
+    <div class="signal"><div class="muted small">DEMO DECISION</div><div class="big" id="signal">NO TRADE</div><div id="reason">लाइव डेटा उपलब्ध नहीं; वास्तविक ट्रेड के लिए सिग्नल मान्य नहीं है।</div></div>
+    <div class="rule"><div class="row"><span>Trend confirmation</span><b id="trendCheck" class="warning">Pending</b></div><div class="bar"><span id="trendBar"></span></div></div>
+    <div class="rule"><div class="row"><span>Option-chain confirmation</span><b id="oiCheck" class="warning">Pending</b></div><div class="bar"><span id="oiBar" style="width:42%;background:var(--yellow)"></span></div></div>
+    <div class="rule"><div class="row"><span>Volatility / IV check</span><b id="ivCheck" class="warning">Pending</b></div><div class="bar"><span id="ivBar" style="width:35%;background:var(--yellow)"></span></div></div>
+    <p class="small muted">इन bars को वास्तविक probability न समझें। लाइव संस्करण में नियमों और डेटा की गुणवत्ता के आधार पर status दिखेगा, guaranteed win-rate नहीं।</p>
+   </section>
+  </div>
+  <div>
+   <section class="panel" style="margin-bottom:14px">
+    <h2>Trade Plan Calculator</h2>
+    <div class="rule"><div class="row"><span class="muted">Suggested side</span><b id="side">NO TRADE</b></div></div>
+    <div class="rule"><div class="row"><span class="muted">Entry premium (₹)</span><input id="entry" type="number" value="180" min="0" style="width:100px"></div></div>
+    <div class="rule"><div class="row"><span class="muted">Stop loss (points)</span><input id="sl" type="number" value="25" min="1" style="width:100px"></div></div>
+    <div class="rule"><div class="row"><span class="muted">Target (points)</span><input id="target" type="number" value="50" min="1" style="width:100px"></div></div>
+    <div class="rule"><div class="row"><span class="muted">Lot quantity</span><input id="qty" type="number" value="65" min="1" style="width:100px"></div></div>
+    <div class="rule"><div class="row"><span class="muted">Risk per lot</span><b id="risklot">₹1,625</b></div></div>
+    <div class="rule"><div class="row"><span class="muted">Qty within risk limit</span><b id="qtylimit">40</b></div></div>
+    <div class="rule"><div class="row"><span class="muted">Potential reward (one lot)</span><b id="reward">₹3,250</b></div></div>
+    <p class="small muted">कैलकुलेशन: SL points × quantity; brokerage, taxes, slippage और gap risk शामिल नहीं। Quantity को अपने मौजूदा contract lot size से सत्यापित करें।</p>
+    <button class="primary" id="calc">Calculate risk</button>
+   </section>
+   <section class="panel" style="margin-bottom:14px">
+    <h2>Market Context</h2>
+    <div class="rule"><div class="row"><span>FII / DII data</span><b class="warning">Not connected</b></div></div>
+    <div class="rule"><div class="row"><span>Global cues / News</span><b class="warning">Not connected</b></div></div>
+    <div class="rule"><div class="row"><span>Greeks / ATM IV</span><b class="warning">Demo only</b></div></div>
+    <div class="rule"><div class="row"><span>Data timestamp</span><b id="stamp">No live feed</b></div></div>
+   </section>
+   <section class="panel">
+    <h2>Safety Rules</h2>
+    <ul class="list">
+     <li>सिग्नल के साथ data timestamp और source दिखाना।</li>
+     <li>डेटा stale या अधूरा हो तो NO TRADE।</li>
+     <li>प्रति ट्रेड अधिकतम जोखिम सेटिंग से नियंत्रित करना।</li>
+     <li>पहले paper trading; फिर ही वास्तविक उपयोग पर विचार।</li>
+     <li>यह डेमो ऑर्डर नहीं भेजता और कोई लाभ सुनिश्चित नहीं करता।</li>
+    </ul>
+   </section>
+  </div>
+ </div>
+</main>
+<div class="footer">JS Algo Trading · Front-end prototype · Demo data only · Not investment advice</div>
+<script>
+const fmt=n=>Number(n).toLocaleString('en-IN',{maximumFractionDigits:2});
+function calc(){
+ const risk=Math.max(0,Number(document.getElementById('risk').value)||0);
+ const sl=Math.max(0,Number(document.getElementById('sl').value)||0);
+ const target=Math.max(0,Number(document.getElementById('target').value)||0);
+ const qty=Math.max(1,Number(document.getElementById('qty').value)||1);
+ document.getElementById('risklot').textContent='₹'+fmt(sl*qty);
+ document.getElementById('qtylimit').textContent=sl>0?fmt(Math.floor(risk/sl)):'—';
+ document.getElementById('reward').textContent='₹'+fmt(target*qty);
+}
+document.getElementById('calc').addEventListener('click',calc);
+['risk','sl','target','qty'].forEach(id=>document.getElementById(id).addEventListener('change',calc));
+document.getElementById('analyze').addEventListener('click',()=>{
+ document.getElementById('signal').textContent='NO TRADE';
+ document.getElementById('side').textContent='NO TRADE';
+ document.getElementById('reason').textContent='यह demo mode है। Live price, option-chain और timestamp उपलब्ध हुए बिना वास्तविक CE/PE signal जारी नहीं किया जाएगा।';
+ document.getElementById('trendCheck').textContent='Demo only';
+ document.getElementById('oiCheck').textContent='No live feed';
+ document.getElementById('ivCheck').textContent='No live feed';
+});
+document.getElementById('refresh').addEventListener('click',()=>{
+ document.getElementById('stamp').textContent='Demo refreshed: '+new Date().toLocaleTimeString('en-IN');
+ document.getElementById('reason').textContent='Demo refresh हुआ है; बाजार डेटा लाइव नहीं है।';
+});
+calc();
+</script>
+</body>
+</html>
