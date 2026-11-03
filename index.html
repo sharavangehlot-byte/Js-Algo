@@ -92,9 +92,9 @@ function renderChain(){
  const m=markets[$('instrument').value],spot=textNum('spot')||m.spot,atm=Math.round(spot/m.step)*m.step,count=Number($('strikeCount').value),half=Math.floor(count/2);
  let ceTotal=0,peTotal=0,html='';chainData=[];
  for(let i=-half;i<=half;i++){
-  const strike=atm+i*m.step,ceOI=Math.round(60000+(i+half)*5200+Math.random()*6000),peOI=Math.round(60000+(half-i)*5400+Math.random()*6000),ceChg=Math.round((Math.random()-.25)*6500),peChg=Math.round((Math.random()-.15)*6500),ceLtp=Math.max(5,m.step*1.5-i*m.step*.18+Math.random()*10),peLtp=Math.max(5,m.step*1.5+i*m.step*.18+Math.random()*10),ceIV=+(12+Math.random()*8).toFixed(1),peIV=+(12+Math.random()*8).toFixed(1);
-  ceTotal+=ceOI;peTotal+=peOI;chainData.push({strike,ceOI,peOI,ceChg,peChg});
-  html+=`<tr><td class="green">${fmt(ceLtp)}</td><td>${ceIV}</td><td>${fmt(ceOI)}</td><td>${fmt(ceChg)}</td><td>${fmt(strike)}</td><td>${fmt(peChg)}</td><td>${fmt(peOI)}</td><td>${peIV}</td><td class="red">${fmt(peLtp)}</td></tr>`;
+  const strike=atm+i*m.step,ceOI=Math.round(60000+(i+half)*5200+Math.random()*6000),peOI=Math.round(60000+(half-i)*5400+Math.random()*6000),ceChg=Math.round((Math.random()-.25)*6500),peChg=Math.round((Math.random()-.15)*6500),ceLtp=Math.max(5,m.step*1.5-i*m.step*.18+Math.random()*10),peLtp=Math.max(5,m.step*1.5+i*m.step*.18+Math.random()*10),ceIV=+(12+Math.random()*8).toFixed(1),peIV=+(12+Math.random()*8).toFixed(1);
+  ceTotal+=ceOI;peTotal+=peOI;chainData.push({strike,ceOI,peOI,ceChg,peChg});
+  html+=`<tr><td class="green">${fmt(ceLtp)}</td><td>${ceIV}</td><td>${fmt(ceOI)}</td><td>${fmt(ceChg)}</td><td>${fmt(strike)}</td><td>${fmt(peChg)}</td><td>${fmt(peOI)}</td><td>${peIV}</td><td class="red">${fmt(peLtp)}</td></tr>`;
  }
  $('chain').innerHTML=html;$('totalCE').textContent=fmt(ceTotal);$('totalPE').textContent=fmt(peTotal);$('atm').textContent=fmt(atm);$('maxPain').textContent=fmt(atm);$('pcr').textContent=(peTotal/Math.max(ceTotal,1)).toFixed(2);analyzeOI();
 }
