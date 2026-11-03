@@ -5,7 +5,55 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
 <title>JS Algo Trading - Advanced Analyzer</title>
+/* STAGE 1 LOGIN DEMO */
 
+.hidden{
+display:none!important;
+}
+
+.login-screen{
+min-height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:20px;
+}
+
+.login-card{
+width:100%;
+max-width:390px;
+background:var(--panel);
+border:1px solid var(--line);
+border-radius:15px;
+padding:25px;
+}
+
+.login-card h2{
+text-align:center;
+margin-bottom:8px;
+}
+
+.login-card label{
+margin:15px 0;
+}
+
+.login-card button{
+width:100%;
+margin-top:12px;
+}
+
+.login-error{
+color:var(--red);
+font-size:13px;
+margin-top:12px;
+}
+
+.user-info{
+display:flex;
+align-items:center;
+gap:8px;
+flex-wrap:wrap;
+}
 <style>
 :root{
 --bg:#07111f;
@@ -30,7 +78,46 @@ background:var(--bg);
 color:var(--text);
 font:14px Arial,sans-serif;
 }
+<!-- STAGE 1 LOGIN -->
 
+<div id="loginScreen" class="login-screen">
+
+<div class="login-card">
+
+<h1 style="text-align:center">
+JS <span class="green">ALGO TRADING</span>
+</h1>
+
+<p class="muted" style="text-align:center">
+CLIENT LOGIN PORTAL
+</p>
+
+<label>Email Address
+<input id="loginEmail"
+type="email"
+placeholder="Enter email">
+</label>
+
+<label>Password
+<input id="loginPassword"
+type="password"
+placeholder="Enter password">
+</label>
+
+<button id="loginBtn" class="primary">
+LOGIN
+</button>
+
+<div id="loginError" class="login-error"></div>
+
+<p class="small" style="text-align:center;margin-top:20px">
+Stage 1 Demo Login
+</p>
+
+</div>
+</div>
+
+<div id="appShell" class="hidden">
 header,main{
 max-width:1200px;
 margin:auto;
@@ -1593,6 +1680,78 @@ refreshDemo(true);
 
 
 </script>
+<!-- LOGIN USER BAR -->
 
+<div class="panel" style="margin:15px">
+<div class="user-info">
+<span id="loggedUser" class="green"></span>
+<span id="loggedRole" class="status"></span>
+<button id="logoutBtn"
+style="margin-left:auto;padding:9px 14px">
+LOGOUT
+</button>
+</div>
+</div>
+
+</div>
+
+<script>
+
+// STAGE 1 DEMO AUTHENTICATION
+
+const demoAccounts = [
+{
+email:"admin@jsalgo.com",
+password:"Admin123",
+role:"ADMIN"
+},
+{
+email:"client@jsalgo.com",
+password:"Client123",
+role:"CLIENT"
+}
+];
+
+$("loginBtn").addEventListener("click",function(){
+
+const email=$("loginEmail").value.trim().toLowerCase();
+const password=$("loginPassword").value;
+
+const account=demoAccounts.find(user=>
+user.email===email &&
+user.password===password
+);
+
+if(!account){
+
+$("loginError").textContent=
+"Invalid Email or Password";
+
+return;
+
+}
+
+$("loginError").textContent="";
+
+$("loggedUser").textContent=account.email;
+$("loggedRole").textContent=account.role;
+
+$("loginScreen").classList.add("hidden");
+$("appShell").classList.remove("hidden");
+
+});
+
+$("logoutBtn").addEventListener("click",function(){
+
+$("appShell").classList.add("hidden");
+$("loginScreen").classList.remove("hidden");
+
+$("loginEmail").value="";
+$("loginPassword").value="";
+$("loginError").textContent="";
+
+});
+
+</script>
 </body>
 </html>
