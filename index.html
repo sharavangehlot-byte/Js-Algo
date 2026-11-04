@@ -370,6 +370,128 @@ align-items:center;
 gap:8px;
 flex-wrap:wrap;
 }
+
+  
+/* JS ALGO TRADING - MOBILE RESPONSIVE FIX */
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+#appShell {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+header, main {
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+  padding: 15px;
+}
+
+.panel, .grid, .metric-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.tablewrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tablewrap table {
+  min-width: 760px;
+  width: max-content;
+}
+
+@media (max-width: 700px) {
+  header {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  header h1 {
+    font-size: 19px;
+  }
+
+  header button {
+    width: 100%;
+  }
+
+  main {
+    padding: 10px;
+  }
+
+  .grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .metric {
+    font-size: 19px;
+    overflow-wrap: anywhere;
+  }
+
+  .controls {
+    gap: 8px;
+  }
+
+  .controls label {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+  }
+
+  .controls button {
+    width: 100%;
+  }
+
+  .panel {
+    padding: 11px;
+    margin-bottom: 10px;
+  }
+
+  .big {
+    font-size: 23px;
+  }
+
+  .pill {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .login-card {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 380px) {
+  header h1 {
+    font-size: 17px;
+  }
+
+  .metric {
+    font-size: 17px;
+  }
+
+  .panel {
+    padding: 9px;
+  }
+
+  .grid {
+    gap: 6px;
+  }
+}
+
+
+  
 </style>
 </head>
 
