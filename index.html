@@ -413,10 +413,11 @@ td:nth-child(5) {
     </label>
 
     <label>Password
-      <input id="loginPassword" type="password" placeholder="Enter password" value="client123">
+      <input id="loginPassword" type="password" placeholder="Enter password" value="client123" onkeydown="if(event.key==='Enter') handleLogin()">
     </label>
 
-    <button id="loginBtn" class="primary">LOGIN</button>
+    <!-- DIRECT ONCLICK CALL TO BYPASS CACHE / DOM ISSUES -->
+    <button id="loginBtn" type="button" class="primary" onclick="handleLogin()">LOGIN</button>
 
     <div id="loginError" class="login-error"></div>
 
@@ -440,8 +441,8 @@ td:nth-child(5) {
 
     <div class="user-bar">
       <span class="status" id="userBadge">● DEMO ACTIVE</span>
-      <button id="refresh">Refresh Demo</button>
-      <button id="logoutBtn" class="danger-btn">Logout</button>
+      <button id="refresh" type="button" onclick="refreshDemo()">Refresh Demo</button>
+      <button id="logoutBtn" type="button" class="danger-btn" onclick="handleLogout()">Logout</button>
     </div>
   </header>
 
@@ -457,7 +458,7 @@ td:nth-child(5) {
       <h2>Trading Controls</h2>
       <div class="controls">
         <label>Instrument
-          <select id="instrument">
+          <select id="instrument" onchange="refreshDemo()">
             <option>NIFTY 50</option>
             <option>BANK NIFTY</option>
             <option>SENSEX</option>
@@ -482,15 +483,15 @@ td:nth-child(5) {
         </label>
 
         <label>Max Risk ₹
-          <input id="risk" type="number" value="1000">
+          <input id="risk" type="number" value="1000" oninput="calc()">
         </label>
 
         <label>Quantity
-          <input id="qty" type="number" value="65">
+          <input id="qty" type="number" value="65" oninput="calc()">
         </label>
       </div>
 
-      <button id="analyze" class="primary">Analyze Demo</button>
+      <button id="analyze" type="button" class="primary" onclick="analyze()">Analyze Demo</button>
     </div>
 
     <!-- MARKET DASHBOARD -->
@@ -529,7 +530,7 @@ td:nth-child(5) {
         </label>
 
         <label>Strikes
-          <select id="strikeCount">
+          <select id="strikeCount" onchange="renderChain()">
             <option value="5">5 Strikes</option>
             <option value="10" selected>10 Strikes</option>
             <option value="13">13 Strikes</option>
@@ -638,10 +639,10 @@ td:nth-child(5) {
           <input id="entry" type="number" value="180">
         </label>
         <label>SL Points
-          <input id="sl" type="number" value="25">
+          <input id="sl" type="number" value="25" oninput="calc()">
         </label>
         <label>Target Points
-          <input id="target" type="number" value="50">
+          <input id="target" type="number" value="50" oninput="calc()">
         </label>
       </div>
 
@@ -715,7 +716,7 @@ td:nth-child(5) {
 
 <script>
 // =====================================
-// AUTHENTICATION SYSTEM (STAGE 1)
+// GLOBAL AUTHENTICATION SYSTEM
 // =====================================
 const users = {
   'admin@jsalgo.com': { pass: 'admin123', role: 'ADMIN' },
@@ -724,18 +725,15 @@ const users = {
 
 const $ = id => document.getElementById(id);
 
-function initAuth() {
-  $('loginBtn').addEventListener('click', handleLogin);
-  $('loginPassword').addEventListener('keyup', e => {
-    if (e.key === 'Enter') handleLogin();
-  });
-  $('logoutBtn').addEventListener('click', handleLogout);
-}
-
-function handleLogin() {
-  const email = $('loginEmail').value.trim().toLowerCase();
-  const pass = $('loginPassword').value;
+window.handleLogin = function() {
+  const emailInput = $('loginEmail');
+  const passInput = $('loginPassword');
   const err = $('loginError');
+
+  if (!emailInput || !passInput) return;
+
+  const email = emailInput.value.trim().toLowerCase();
+  const pass = passInput.value.trim();
 
   if (!email || !pass) {
     err.textContent = 'कृपया Email और Password दोनों दर्ज करें।';
@@ -744,24 +742,21 @@ function handleLogin() {
 
   if (users[email] && users[email].pass === pass) {
     err.textContent = '';
-    // Login Success
     $('loginScreen').classList.add('hidden');
     $('appShell').classList.remove('hidden');
     $('userBadge').textContent = `● ${users[email].role}: ${email.split('@')[0].toUpperCase()}`;
-    
-    // Initialize Dashboard
     refreshDemo();
   } else {
     err.textContent = 'गलत Email या Password! पुनः प्रयास करें।';
   }
-}
+};
 
-function handleLogout() {
+window.handleLogout = function() {
   $('appShell').classList.add('hidden');
   $('loginScreen').classList.remove('hidden');
   $('loginPassword').value = '';
   $('loginError').textContent = '';
-}
+};
 
 // =====================================
 // CORE APP LOGIC
@@ -779,7 +774,6 @@ const markets = {
 let chainData = [];
 let demoBias = 'NEUTRAL';
 let demoVix = 15;
-let lastAnalysis = null;
 
 function getNumber(id) {
   return Number($(id).value) || 0;
@@ -792,7 +786,7 @@ function getTextNumber(id) {
 // =====================================
 // RISK CALCULATOR
 // =====================================
-function calc() {
+window.calc = function() {
   const riskLimit = getNumber('risk');
   const sl = getNumber('sl');
   const target = getNumber('target');
@@ -814,12 +808,12 @@ function calc() {
   $('riskMessage').textContent = 'Potential loss: ₹' + fmt(actualRisk) + ' | Potential reward: ₹' + fmt(reward);
 
   return { riskLimit, actualRisk, reward, qty, rr, riskOK };
-}
+};
 
 // =====================================
 // OPTION CHAIN
 // =====================================
-function renderChain() {
+window.renderChain = function() {
   const market = markets[$('instrument').value];
   const spot = getTextNumber('spot') || market.spot;
   const atm = Math.round(spot / market.step) * market.step;
@@ -853,14 +847,4 @@ function renderChain() {
         <td>${ceIV}</td>
         <td>${fmt(ceOI)}</td>
         <td>${fmt(ceChg)}</td>
-        <td>${fmt(strike)}</td>
-        <td>${fmt(peChg)}</td>
-        <td>${fmt(peOI)}</td>
-        <td>${peIV}</td>
-        <td class="red">${fmt(peLtp)}</td>
-      </tr>
-    `;
-  }
-
-  $('chain').innerHTML = html;
-  $
+        <t
